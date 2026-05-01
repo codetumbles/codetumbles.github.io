@@ -21,7 +21,7 @@ FG_MUTED = (180, 180, 180)
 
 TITLE = "Code Tumbles"
 SUBTITLE = "Notes on machine learning, software, and engineering"
-URL = "codingtumbleweed.github.io/blog"
+URL = "codetumbles.github.io"
 
 
 def find_font(size, bold=False):

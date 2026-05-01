@@ -1,6 +1,6 @@
 # Code Tumbles
 
-Source for [codingtumbleweed.github.io/blog](https://codingtumbleweed.github.io/blog/).
+Source for [codetumbles.github.io](https://codetumbles.github.io/).
 
 A minimal custom Jekyll site (Ruby + Bootstrap 5 utilities) built around
 multi-collection writing, dark mode, sticky sidebar TOC, Lunr search, and

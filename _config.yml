@@ -6,9 +6,9 @@ title:         "Code Tumbles"
 title_separator: "-"
 name:          "Usman Akram"
 description:   "Notes I keep for my future self - on machine learning, software, and engineering."
-url:           "https://codingtumbleweed.github.io"
-baseurl:       "/blog"
-repository:    "CodingTumbleweed/blog"
+url:           "https://codetumbles.github.io"
+baseurl:       ""
+repository:    "codetumbles/codetumbles.github.io"
 words_per_minute: 200
 timezone:      Etc/UTC
 
@@ -20,7 +20,7 @@ author:
   bio:     "Software Engineer"
   avatar:  "/assets/images/avatar.png"
   twitter: "ozmanakram"
-  github:  "CodingTumbleweed"
+  github:  "codetumbles"
 
 twitter:
   username: ozmanakram
@@ -31,7 +31,7 @@ social:
   name:  "Usman Akram"
   links:
     - "https://twitter.com/ozmanakram"
-    - "https://github.com/CodingTumbleweed"
+    - "https://github.com/codetumbles"
 
 # ----------------------------------------------------------------------------
 # Feature flags
