@@ -1,0 +1,43 @@
+---
+layout: default
+---
+<article class="post" id="post-article">
+  <header class="post-header">
+    <h1 class="post-title">{{ page.title }}</h1>
+    {% include post-meta.html %}
+  </header>
+
+  {% include changelog.html %}
+
+  {% include series-box.html %}
+
+  {% if page.toc %}
+    <div class="post-with-toc">
+      <div class="prose" id="post-body">
+        {{ content }}
+
+        {% include series-pager.html %}
+      </div>
+
+      {% include toc.html %}
+    </div>
+  {% else %}
+    <div class="prose container-prose" id="post-body">
+      {{ content }}
+
+      {% include series-pager.html %}
+    </div>
+  {% endif %}
+
+  {% if site.features.related_posts %}
+    {% include related.html %}
+  {% endif %}
+
+  {% include edit-on-github.html %}
+
+  {% if site.features.newsletter %}
+    {% include newsletter.html context="post" %}
+  {% endif %}
+
+  {% include comments.html %}
+</article>

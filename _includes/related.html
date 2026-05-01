@@ -1,0 +1,39 @@
+{%- comment -%}
+Tag-overlap-based related posts. Renders the top 3 highest-overlap posts in
+the same collection. No-op if `page.tags` is empty or `page.related == false`.
+
+The list is built by tagging each candidate post with a sortable score string
+"<count>-<n>" (counts up to 99) so Liquid's lexicographic sort is stable and
+descending after `reverse`.
+{%- endcomment -%}
+{% if page.related != false and page.tags and page.tags.size > 0 %}
+  {%- assign coll_label = page.collection | default: "writing" -%}
+  {%- assign candidates = site[coll_label] -%}
+  {%- assign scored = "" | split: "" -%}
+  {%- for post in candidates -%}
+    {%- if post.url == page.url -%}{%- continue -%}{%- endif -%}
+    {%- assign overlap = 0 -%}
+    {%- for t in post.tags -%}
+      {%- if page.tags contains t -%}
+        {%- assign overlap = overlap | plus: 1 -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- if overlap > 0 -%}
+      {%- assign padded = overlap | prepend: "00" -%}
+      {%- capture score_str -%}{{ padded | slice: -2, 2 }}|{{ post.url }}|{{ post.title }}{%- endcapture -%}
+      {%- assign scored = scored | push: score_str -%}
+    {%- endif -%}
+  {%- endfor -%}
+  {%- assign scored = scored | sort | reverse -%}
+  {% if scored.size > 0 %}
+    <section class="related" aria-label="Related posts">
+      <h2 class="related__title">Related</h2>
+      <ul class="related__list">
+        {% for entry in scored limit: 3 %}
+          {%- assign parts = entry | split: "|" -%}
+          <li><a href="{{ parts[1] | relative_url }}">{{ parts[2] }}</a></li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+{% endif %}

@@ -1,0 +1,24 @@
+{%- comment -%}
+Renders a multi-part series box at the top of any post with `page.series` set.
+Lists all parts in order; current part is bolded.
+{%- endcomment -%}
+{% if page.series %}
+  {% assign parts = site.writing | where: "series", page.series | sort: "part" %}
+  {% if parts.size > 1 %}
+    <aside class="series-box" aria-label="Series">
+      <p class="series-box__title">Series</p>
+      <p class="series-box__heading">{{ page.series_title | default: page.series }}</p>
+      <ol class="series-box__list">
+        {% for part in parts %}
+          <li{% if part.url == page.url %} class="is-current" aria-current="true"{% endif %}>
+            {% if part.url == page.url %}
+              {{ part.title }}
+            {% else %}
+              <a href="{{ part.url | relative_url }}">{{ part.title }}</a>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ol>
+    </aside>
+  {% endif %}
+{% endif %}

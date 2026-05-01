@@ -1,0 +1,7 @@
+# Curated "Trending This Week" list. Renders only when
+# `site.features.curated_lists` is true. Each entry: { title, url, date }
+#
+# Example:
+# - title: "Patterns for Building LLM-based Systems"
+#   url: /writing/llm-patterns/
+#   date: 2025-09-01

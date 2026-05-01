@@ -1,0 +1,15 @@
+---
+layout: default
+---
+<article class="page container-prose">
+  {% if page.title %}
+    <header>
+      <h1 class="page-title">{{ page.title }}</h1>
+      {% if page.lede %}<p class="page-lede">{{ page.lede }}</p>{% endif %}
+    </header>
+  {% endif %}
+
+  <div class="prose">
+    {{ content }}
+  </div>
+</article>

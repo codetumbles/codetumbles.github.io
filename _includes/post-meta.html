@@ -1,0 +1,20 @@
+{%- comment -%}
+Post metadata header rendered under the post title.
+Shows: published date · reading time · word count [· last updated]
+{%- endcomment -%}
+{%- assign wpm = site.words_per_minute | default: 200 -%}
+{%- assign words = page.content | number_of_words -%}
+{%- assign minutes = words | divided_by: wpm -%}
+{%- if minutes < 1 -%}{%- assign minutes = 1 -%}{%- endif -%}
+
+<div class="post-meta">
+  <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%b %d, %Y" }}</time>
+  <span class="post-meta__sep">&middot;</span>
+  <span>{{ minutes }} min read</span>
+  <span class="post-meta__sep">&middot;</span>
+  <span>{{ words }} words</span>
+  {%- if page.last_updated and page.last_updated != page.date -%}
+    <span class="post-meta__sep">&middot;</span>
+    <span>Updated {{ page.last_updated | date: "%b %d, %Y" }}</span>
+  {%- endif -%}
+</div>

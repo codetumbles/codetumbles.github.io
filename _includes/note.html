@@ -1,0 +1,15 @@
+{%- comment -%}
+Callout / aside box.
+
+Usage:
+  {% include note.html type="tip"  body="Required pre-read..." %}
+  {% include note.html type="warn" body="**Warning:** ..." %}
+  {% include note.html type="info" body="Note: ..." %}
+  {% include note.html type="aside" body="..." %}
+
+`body` is rendered through `markdownify` so inline markdown works.
+{%- endcomment -%}
+{%- assign type = include.type | default: "info" -%}
+<div class="callout callout--{{ type }}" role="note">
+  {{ include.body | markdownify }}
+</div>

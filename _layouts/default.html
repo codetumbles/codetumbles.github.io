@@ -1,37 +1,50 @@
----
----
-
 <!doctype html>
+<html lang="{{ site.locale | default: 'en-US' }}">
+<head>
+  {%- include head.html -%}
+</head>
+<body>
+  {% if site.features.reading_progress and page.layout == 'post' %}
+    <div id="reading-progress" aria-hidden="true"></div>
+  {% endif %}
 
-<html lang="{{ site.locale | slice: 0,2 | default: "en" }}" class="no-js">
-  <head>
-    {% include head.html %}
-    {% include head/custom.html %}
-  </head>
+  {%- include header.html -%}
 
-  <body class="layout--{{ page.layout | default: layout.layout }}{% if page.classes or layout.classes %}{{ page.classes | default: layout.classes | join: ' ' | prepend: ' ' }}{% endif %}">
+  <main id="main-content" class="site-main">
+    {{ content }}
+  </main>
 
-    {% include browser-upgrade.html %}
-    {% include masthead.html %}
+  {%- include footer.html -%}
 
-    <div class="initial-content">
-      {{ content }}
-    </div>
+  {%- comment -%} Always-on JS {%- endcomment -%}
+  {% if site.features.darkmode %}
+    <script src="{{ '/assets/js/darkmode.js' | relative_url }}" defer></script>
+  {% endif %}
 
-    {% if site.search == true %}
-      <div class="search-content">
-        {% include search/search_form.html %}
-      </div>
+  {%- comment -%} Post-only JS {%- endcomment -%}
+  {% if page.layout == 'post' %}
+    {% if site.features.copy_code %}
+      <script src="{{ '/assets/js/copycode.js' | relative_url }}" defer></script>
     {% endif %}
+    {% if site.features.heading_anchors %}
+      <script src="{{ '/assets/js/anchors.js' | relative_url }}" defer></script>
+    {% endif %}
+    {% if site.features.reading_progress %}
+      <script src="{{ '/assets/js/progress.js' | relative_url }}" defer></script>
+    {% endif %}
+    {% if page.toc %}
+      <script src="{{ '/assets/js/toc.js' | relative_url }}" defer></script>
+    {% endif %}
+  {% endif %}
 
-    <div class="page__footer">
-      <footer>
-        {% include footer/custom.html %}
-        {% include footer.html %}
-      </footer>
-    </div>
+  {%- comment -%} Optional features {%- endcomment -%}
+  {% if site.features.typewriter and page.layout == 'home' %}
+    <script src="{{ '/assets/js/loop.js' | relative_url }}" defer></script>
+  {% endif %}
 
-    {% include scripts.html %}
-
-  </body>
+  {% if site.features.search and page.layout == 'page' and page.search_page %}
+    <script src="{{ '/assets/vendor/lunr.min.js' | relative_url }}" defer></script>
+    <script src="{{ '/assets/js/search.js' | relative_url }}" defer></script>
+  {% endif %}
+</body>
 </html>

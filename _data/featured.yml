@@ -1,0 +1,2 @@
+# Curated "Featured" list. Renders only when
+# `site.features.curated_lists` is true. Each entry: { title, url, date }

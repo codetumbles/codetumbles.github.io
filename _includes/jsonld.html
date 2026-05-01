@@ -1,0 +1,59 @@
+{%- comment -%}
+JSON-LD structured data:
+  - WebSite     (sitewide)
+  - Person      (sitewide author)
+  - BlogPosting (per-post; only on `layout: post`)
+
+Note: jekyll-seo-tag emits an Article/BlogPosting JSON-LD when a post has the
+right front matter, but it is conservative. We emit our own to ensure the data
+is rich and consistent.
+{%- endcomment -%}
+
+{%- assign site_url = site.url | append: site.baseurl -%}
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": {{ site.title | jsonify }},
+  "url": {{ site_url | jsonify }}{% if site.description %},
+  "description": {{ site.description | jsonify }}{% endif %}
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": {{ site.author.name | jsonify }}{% if site.author.bio %},
+  "description": {{ site.author.bio | jsonify }}{% endif %}{% if site.social.links %},
+  "sameAs": {{ site.social.links | jsonify }}{% endif %},
+  "url": {{ site_url | jsonify }}
+}
+</script>
+
+{% if page.layout == 'post' %}
+{%- assign abs_url = page.url | absolute_url -%}
+{%- assign post_image = page.image | default: site.image -%}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "mainEntityOfPage": { "@type": "WebPage", "@id": {{ abs_url | jsonify }} },
+  "headline": {{ page.title | jsonify }},{% if page.excerpt %}
+  "description": {{ page.excerpt | strip_html | strip_newlines | truncate: 160 | jsonify }},{% endif %}
+  "datePublished": {{ page.date | date_to_xmlschema | jsonify }},
+  "dateModified": {{ page.last_updated | default: page.date | date_to_xmlschema | jsonify }},
+  "author": {
+    "@type": "Person",
+    "name": {{ site.author.name | jsonify }}
+  },
+  "publisher": {
+    "@type": "Person",
+    "name": {{ site.author.name | jsonify }}
+  }{% if post_image %},
+  "image": {{ post_image | absolute_url | jsonify }}{% endif %}{% if page.tags %},
+  "keywords": {{ page.tags | join: ', ' | jsonify }}{% endif %}
+}
+</script>
+{% endif %}

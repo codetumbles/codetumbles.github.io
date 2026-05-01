@@ -1,13 +1,46 @@
 ---
-layout: archive
+layout: default
 ---
+<section class="home-hero">
+  <h1 class="home-hero__title">
+    Hi, I'm {{ site.author.name }}.
+    {% if site.features.typewriter %}
+      <span class="typewriter typewriter-cursor" id="typewriter" data-strings='["builds.", "ships.", "writes."]'></span>
+    {% endif %}
+  </h1>
+  <p class="home-hero__lede">
+    {{ page.lede | default: site.description }}
+  </p>
+  {% if page.content and page.content != "" %}
+    <div class="prose">
+      {{ content }}
+    </div>
+  {% endif %}
+</section>
 
-{{ content }}
+{% if site.features.curated_lists %}
+  {% include curated-list.html collection="trending" title="Trending This Week" %}
+  {% include curated-list.html collection="featured" title="Featured" %}
+{% endif %}
 
-<h3 class="archive__subtitle">{{ site.data.ui-text[site.locale].recent_posts | default: "Recent Posts" }}</h3>
-
-{% for post in paginator.posts %}
-  {% include archive-single.html %}
-{% endfor %}
-
-{% include paginator.html %}
+<section class="home-section">
+  <h2 class="home-section__title">Latest</h2>
+  {% assign latest = site.writing | sort: "date" | reverse %}
+  {% if latest.size > 0 %}
+    <ul class="post-list">
+      {% for post in latest limit: 10 %}
+        <li class="post-list__item">
+          <span class="post-list__date">{{ post.date | date: "%d %b %Y" }}</span>
+          <a class="post-list__link" href="{{ post.url | relative_url }}">{{ post.title }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+    {% if latest.size > 10 %}
+      <p style="margin-top:1rem;font-family:var(--sans);font-size:0.92rem;">
+        <a href="{{ '/writing/' | relative_url }}">Browse all writing &rarr;</a>
+      </p>
+    {% endif %}
+  {% else %}
+    <p class="archive-empty">No posts yet.</p>
+  {% endif %}
+</section>

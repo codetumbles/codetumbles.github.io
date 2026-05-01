@@ -1,0 +1,8 @@
+{%- comment -%}
+Typewriter scaffold. The actual animation is in assets/js/loop.js, which reads
+the data-strings JSON array from the target element.
+{%- endcomment -%}
+{% if site.features.typewriter %}
+  <span class="typewriter typewriter-cursor" id="typewriter"
+        data-strings='{{ site.typewriter_strings | default: "[\"writes.\", \"builds.\", \"ships.\"]" }}'></span>
+{% endif %}

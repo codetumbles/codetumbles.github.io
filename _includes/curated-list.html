@@ -1,0 +1,23 @@
+{%- comment -%}
+Curated list block (e.g. Trending This Week, Featured, Favourites).
+
+Usage:
+  {% include curated-list.html collection="trending" title="Trending This Week" %}
+
+Reads /_data/<collection>.yml — each entry is { url, title, date }.
+Renders nothing if the data file is missing or empty.
+{%- endcomment -%}
+{%- assign data = site.data[include.collection] -%}
+{% if site.features.curated_lists and data and data.size > 0 %}
+  <section class="home-section">
+    <h2 class="home-section__title">{{ include.title }}</h2>
+    <ul class="post-list">
+      {% for item in data %}
+        <li class="post-list__item">
+          {% if item.date %}<span class="post-list__date">{{ item.date | date: "%d %b %Y" }}</span>{% endif %}
+          <a class="post-list__link" href="{{ item.url | relative_url }}">{{ item.title }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endif %}

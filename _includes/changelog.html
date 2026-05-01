@@ -1,0 +1,16 @@
+{%- comment -%}
+Renders a collapsible "Last updated" block when `page.changelog` is set.
+Renders nothing if changelog is empty.
+{%- endcomment -%}
+{% if page.changelog and page.changelog.size > 0 %}
+<details class="post-changelog">
+  <summary>
+    Last updated {{ page.last_updated | default: page.changelog[0].date | date: "%b %d, %Y" }}. View changelog.
+  </summary>
+  <ul>
+    {% for entry in page.changelog %}
+      <li><strong>{{ entry.date | date: "%b %d, %Y" }}</strong> &mdash; {{ entry.note }}</li>
+    {% endfor %}
+  </ul>
+</details>
+{% endif %}

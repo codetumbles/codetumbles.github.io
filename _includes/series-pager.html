@@ -1,0 +1,32 @@
+{%- comment -%}
+Previous-part / Next-part navigation rendered at the bottom of a series post.
+{%- endcomment -%}
+{% if page.series %}
+  {% assign parts = site.writing | where: "series", page.series | sort: "part" %}
+  {% if parts.size > 1 %}
+    {%- assign prev_part = nil -%}
+    {%- assign next_part = nil -%}
+    {%- for part in parts -%}
+      {%- if part.url == page.url -%}
+        {%- assign idx = forloop.index0 -%}
+        {%- if idx > 0 -%}{%- assign prev_part = parts[forloop.index0 | minus: 1] -%}{%- endif -%}
+        {%- assign next_idx = forloop.index0 | plus: 1 -%}
+        {%- if next_idx < parts.size -%}{%- assign next_part = parts[next_idx] -%}{%- endif -%}
+      {%- endif -%}
+    {%- endfor -%}
+    <nav class="series-pager" aria-label="Series navigation">
+      <div class="prev">
+        {% if prev_part %}
+          <span class="label">&larr; Previous part</span>
+          <a href="{{ prev_part.url | relative_url }}">{{ prev_part.title }}</a>
+        {% endif %}
+      </div>
+      <div class="next">
+        {% if next_part %}
+          <span class="label">Next part &rarr;</span>
+          <a href="{{ next_part.url | relative_url }}">{{ next_part.title }}</a>
+        {% endif %}
+      </div>
+    </nav>
+  {% endif %}
+{% endif %}

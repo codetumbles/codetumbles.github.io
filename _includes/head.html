@@ -1,43 +1,90 @@
 <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#ffffff" id="meta-theme-color">
+<meta name="site-baseurl" content="{{ site.baseurl | default: '' }}">
 
-{% include seo.html %}
-
-<link href="{% if site.atom_feed.path %}{{ site.atom_feed.path }}{% else %}{{ '/feed.xml' | relative_url }}{% endif %}" type="application/atom+xml" rel="alternate" title="{{ site.title }} Feed">
-
-<!-- http://t.co/dKP3o1e -->
-<meta name="HandheldFriendly" content="True">
-<meta name="MobileOptimized" content="320">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+{%- comment -%} Pre-paint dark-mode application to avoid FOUC {%- endcomment -%}
+{% if site.features.darkmode %}
 <script>
-  document.documentElement.className = document.documentElement.className.replace(/\bno-js\b/g, '') + ' js ';
+  (function() {
+    try {
+      var stored = localStorage.getItem('theme');
+      var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var theme = stored || (prefersDark ? 'dark' : 'light');
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark-mode');
+        var meta = document.getElementById('meta-theme-color');
+        if (meta) meta.setAttribute('content', '#0f1115');
+      }
+    } catch (e) {}
+  })();
 </script>
+{% endif %}
 
-<!-- For all browsers -->
+{%- comment -%} SEO + meta {%- endcomment -%}
+{% seo %}
+
+{%- comment -%} Feeds {%- endcomment -%}
+{% if site.features.rss %}
+<link rel="alternate" type="application/rss+xml" title="{{ site.title }}" href="{{ '/feed.xml' | absolute_url }}">
+{% endif %}
+
+{%- comment -%} Fonts {%- endcomment -%}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;1,400&family=Raleway:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+
+{%- comment -%} Site stylesheet (includes our own minimal reset, no Bootstrap) {%- endcomment -%}
 <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
 
-<!--[if lte IE 9]>
-  <style>
-    /* old IE unsupported flexbox fixes */
-    .greedy-nav .site-title {
-      padding-right: 3em;
-    }
-    .greedy-nav button {
-      position: absolute;
-      top: 0;
-      right: 0;
-      height: 100%;
-    }
-  </style>
-<![endif]-->
+{%- comment -%} Favicon (uses avatar as fallback) {%- endcomment -%}
+<link rel="icon" type="image/png" href="{{ '/assets/images/avatar.png' | relative_url }}">
 
-{% if site.head_scripts %}
-  {% for script in site.head_scripts %}
-    {% if script contains "://" %}
-      {% capture script_path %}{{ script }}{% endcapture %}
-    {% else %}
-      {% capture script_path %}{{ script | relative_url }}{% endcapture %}
-    {% endif %}
-    <script src="{{ script_path }}"></script>
-  {% endfor %}
+{%- comment -%} JSON-LD structured data {%- endcomment -%}
+{% include jsonld.html %}
+
+{%- comment -%}
+  MathJax (per-post or site-wide flag).
+  Pinned to a specific 3.x patch so the SRI hash stays valid; bump both
+  together when upgrading.
+{%- endcomment -%}
+{% if site.features.mathjax and page.math != false %}
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"
+        integrity="sha384-Wuix6BuhrWbjDBs24bXrjf4ZQ5aFeFWBuKkFekO2t8xFU0iNaLQfp2K6/1Nxveei"
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
+{% endif %}
+
+{%- comment -%}
+  Mermaid (per-post flag) — UMD build so we can attach SRI. The inline
+  script below uses the global `mermaid` object exposed by the UMD bundle.
+{%- endcomment -%}
+{% if page.mermaid %}
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"
+        integrity="sha384-WmdflGW9aGfoBdHc4rRyWzYuAjEmDwMdGdiPNacbwfGKxBW/SO6guzuQ76qjnSlr"
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
+<script>
+  (function () {
+    function mermaidTheme() {
+      return document.documentElement.classList.contains('dark-mode') ? 'dark' : 'default';
+    }
+    mermaid.initialize({ startOnLoad: true, theme: mermaidTheme(), securityLevel: 'strict' });
+    document.addEventListener('themechange', function () {
+      document.querySelectorAll('.mermaid').forEach(function (n) {
+        n.removeAttribute('data-processed');
+      });
+      mermaid.initialize({ startOnLoad: false, theme: mermaidTheme(), securityLevel: 'strict' });
+      mermaid.run();
+    });
+  })();
+</script>
 {% endif %}

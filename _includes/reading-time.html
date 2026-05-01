@@ -1,0 +1,14 @@
+{%- comment -%}
+Compute reading time as max(1, words / words_per_minute) minutes.
+
+Usage:
+  {% include reading-time.html words=page.content %}
+or just (defaults to page.content):
+  {% include reading-time.html %}
+{%- endcomment -%}
+{%- assign wpm = site.words_per_minute | default: 200 -%}
+{%- assign source_text = include.words | default: page.content -%}
+{%- assign word_count = source_text | number_of_words -%}
+{%- assign minutes = word_count | divided_by: wpm -%}
+{%- if minutes < 1 -%}{%- assign minutes = 1 -%}{%- endif -%}
+{{- minutes -}} min read

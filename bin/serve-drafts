@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Run Jekyll locally with drafts and livereload.
+set -euo pipefail
+exec bundle exec jekyll serve --drafts --livereload "$@"

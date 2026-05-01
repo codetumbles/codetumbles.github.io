@@ -1,283 +1,175 @@
-# Welcome to Jekyll!
-#
-# This config file is meant for settings that affect your entire site, values
-# which you are expected to set up once and rarely need to edit after that.
-# For technical reasons, this file is *NOT* reloaded automatically when you use
-# `jekyll serve`. If you change this file, please restart the server process.
-
-# Theme Settings
-#
-# Review documentation to determine if you should use `theme` or `remote_theme`
-# https://mmistakes.github.io/minimal-mistakes/docs/quick-start-guide/#installing-the-theme
-
-# theme                  : "minimal-mistakes-jekyll"
-# remote_theme           : "mmistakes/minimal-mistakes"
-minimal_mistakes_skin    : "default" # "air", "aqua", "contrast", "dark", "dirt", "neon", "mint", "plum", "sunrise"
-
+# ----------------------------------------------------------------------------
 # Site Settings
-locale                   : "en-US"
-title                    : "Code Tumbles"
-title_separator          : "-"
-name                     : "Usman Akram"
-description              : "Notes I Keep for my future self"
-url                      : "https://codingtumbleweed.github.io" # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
-baseurl                  : "/blog" # the subpath of your site, e.g. "/blog"
-repository               : "CodingTumbleweed/blog" # GitHub username/repo-name e.g. "mmistakes/minimal-mistakes"
-#head_scripts:
-#  - https://code.jquery.com/jquery-3.2.1.min.js
-#  - /assets/js/your-custom-head-script.js
-teaser                   : # path of fallback teaser image, e.g. "/assets/images/500x300.png"
-# breadcrumbs            : false # true, false (default)
-words_per_minute         : 200
-comments:
-  provider               : # false (default), "disqus", "discourse", "facebook", "google-plus", "staticman", "staticman_v2" "custom"
-  disqus:
-    shortname            : # https://help.disqus.com/customer/portal/articles/466208-what-s-a-shortname-
-  discourse:
-    server               : # https://meta.discourse.org/t/embedding-discourse-comments-via-javascript/31963 , e.g.: meta.discourse.org
-  facebook:
-    # https://developers.facebook.com/docs/plugins/comments
-    appid                :
-    num_posts            : # 5 (default)
-    colorscheme          : # "light" (default), "dark"
-staticman:
-  allowedFields          : # ['name', 'email', 'url', 'message']
-  branch                 : # "master"
-  commitMessage          : # "New comment by {fields.name}"
-  filename               : # comment-{@timestamp}
-  format                 : # "yml"
-  moderation             : # true
-  path                   : # "/_data/comments/{options.slug}" (default)
-  requiredFields         : # ['name', 'email', 'message']
-  transforms:
-    email                : # "md5"
-  generatedFields:
-    date:
-      type               : # "date"
-      options:
-        format           : # "iso8601" (default), "timestamp-seconds", "timestamp-milliseconds"
-reCaptcha:
-  siteKey                :
-  secret                 :
-atom_feed:
-  path                   : # blank (default) uses feed.xml
-search                   : true # true, false (default)
-search_full_content      : true # true, false (default)
-search_provider          : # lunr (default), algolia, google
-algolia:
-  application_id         : # YOUR_APPLICATION_ID
-  index_name             : # YOUR_INDEX_NAME
-  search_only_api_key    : # YOUR_SEARCH_ONLY_API_KEY
-  powered_by             : # true (default), false
-google:
-  search_engine_id       : # YOUR_SEARCH_ENGINE_ID
-  instant_search         : # false (default), true
-# SEO Related
-google_site_verification :
-bing_site_verification   :
-yandex_site_verification :
-naver_site_verification  :
+# ----------------------------------------------------------------------------
+locale:        "en-US"
+title:         "Code Tumbles"
+title_separator: "-"
+name:          "Usman Akram"
+description:   "Notes I keep for my future self - on machine learning, software, and engineering."
+url:           "https://codingtumbleweed.github.io"
+baseurl:       "/blog"
+repository:    "CodingTumbleweed/blog"
+words_per_minute: 200
+timezone:      Etc/UTC
 
-# Social Sharing
-twitter:
-  username               : ozmanakram
-facebook:
-  username               :
-  app_id                 :
-  publisher              :
-og_image                 : # Open Graph/Twitter default site image
-# For specifying social profiles
-# - https://developers.google.com/structured-data/customize/social-profiles
-social:
-  type                   : # Person or Organization (defaults to Person)
-  name                   : # If the user or organization name differs from the site's name
-  links: # An array of links to social media profiles
-      - "https://twitter.com/ozmanakram"
-
-# Analytics
-analytics:
-  provider               : false # false (default), "google", "google-universal", "custom"
-  google:
-    tracking_id          :
-    anonymize_ip         : # true, false (default)
-
-
-# Site Author
+# ----------------------------------------------------------------------------
+# Author / social (consumed by jekyll-seo-tag and footer)
+# ----------------------------------------------------------------------------
 author:
-  name             : "Usman Akram"
-  avatar           : "/assets/images/avatar.png" # path of avatar image, e.g. "/assets/images/bio-photo.jpg"
-  bio              : "Software Engineer"
-  #location         : "Islamabad"
-  #email            : 
-  uri              : "https://codingtumbleweed.github.io/blog/"
-  home             : # null (default), "absolute or relative url to link to author home"
-  bitbucket        :
-  codepen          :
-  dribbble         :
-  flickr           :
-  facebook         :
-  foursquare       :
-  github           : CodingTumbleweed
-  gitlab           :
-  google_plus      :
-  keybase          :
-  instagram        :
-  lastfm           :
-  linkedin         : # "john-doe-12345678" (the last part of your profile url, e.g. https://www.linkedin.com/in/john-doe-12345678)
-  pinterest        :
-  soundcloud       :
-  stackoverflow    : # "123456/username" (the last part of your profile url, e.g. https://stackoverflow.com/users/123456/username)
-  steam            : # "steamId" (the last part of your profile url, e.g. https://steamcommunity.com/id/steamId/)
-  tumblr           :
-  twitter          : ozmanakram
-  vine             :
-  weibo            :
-  xing             :
-  youtube          : # "https://youtube.com/c/MichaelRoseDesign"
+  name:    "Usman Akram"
+  bio:     "Software Engineer"
+  avatar:  "/assets/images/avatar.png"
+  twitter: "ozmanakram"
+  github:  "CodingTumbleweed"
 
+twitter:
+  username: ozmanakram
+  card:     summary_large_image
 
-# Reading Files
+social:
+  type:  Person
+  name:  "Usman Akram"
+  links:
+    - "https://twitter.com/ozmanakram"
+    - "https://github.com/CodingTumbleweed"
+
+# ----------------------------------------------------------------------------
+# Feature flags
+#
+#   Each layout/include checks the flag before rendering, e.g.
+#     {% if site.features.typewriter %}{% include typewriter.html %}{% endif %}
+# ----------------------------------------------------------------------------
+features:
+  darkmode:            true
+  search:              true
+  rss:                 true
+  mathjax:             true
+  syntax_highlighting: true
+  copy_code:           true
+  heading_anchors:     true
+  related_posts:       true
+  reading_progress:    true
+  newsletter:          false   # set true once `newsletter_url` is filled in
+  mermaid:             false   # global default; per-post opt-in via `mermaid: true`
+  typewriter:          false
+  curated_lists:       false
+  comments:            false   # set to "utterances" or "giscus" to enable
+
+newsletter_url:        ""      # e.g. https://buttondown.email/api/emails/embed-subscribe/yourname
+
+# Comments providers (only used when features.comments != false)
+comments:
+  utterances:
+    repo:   ""
+    issue_term: pathname
+    theme:  github-light
+  giscus:
+    repo:   ""
+    repo_id: ""
+    category: General
+    category_id: ""
+    mapping: pathname
+    reactions: 1
+
+# ----------------------------------------------------------------------------
+# Reading files
+# ----------------------------------------------------------------------------
 include:
-  - .htaccess
   - _pages
 exclude:
-  - "*.sublime-project"
-  - "*.sublime-workspace"
-  - vendor
-  - .asset-cache
-  - .bundle
-  - .jekyll-assets-cache
-  - .sass-cache
-  - assets/js/plugins
-  - assets/js/_main.js
-  - assets/js/vendor
-  - Capfile
-  - CHANGELOG
-  - config
   - Gemfile
-  - Gruntfile.js
-  - gulpfile.js
-  - LICENSE
-  - log
+  - Gemfile.lock
+  - vendor
   - node_modules
-  - package.json
-  - Rakefile
-  - README
-  - tmp
-  - /docs # ignore Minimal Mistakes /docs
-  - /test # ignore Minimal Mistakes /test
+  - bin
+  - README.md
+  - .bundle
+  - .sass-cache
+  - .jekyll-cache
 keep_files:
   - .git
-  - .svn
 encoding: "utf-8"
 markdown_ext: "markdown,mkdown,mkdn,mkd,md"
 
-
+# ----------------------------------------------------------------------------
 # Conversion
-markdown: kramdown
-mathjax: true
+# ----------------------------------------------------------------------------
+markdown:    kramdown
 highlighter: rouge
-lsi: false
+lsi:         false
 excerpt_separator: "\n\n"
 incremental: false
 
-
-# Markdown Processing
 kramdown:
-  input: GFM
-  hard_wrap: false
-  auto_ids: true
-  footnote_nr: 1
+  input:        GFM
+  hard_wrap:    false
+  auto_ids:     true
+  footnote_nr:  1
   entity_output: as_char
-  toc_levels: 1..6
+  toc_levels:   1..3
   smart_quotes: lsquo,rsquo,ldquo,rdquo
-  enable_coderay: false
+  syntax_highlighter: rouge
 
-
-# Sass/SCSS
+# ----------------------------------------------------------------------------
+# Sass / SCSS
+# ----------------------------------------------------------------------------
 sass:
   sass_dir: _sass
-  style: compressed # http://sass-lang.com/documentation/file.SASS_REFERENCE.html#output_style
+  style:    compressed
 
-
+# ----------------------------------------------------------------------------
 # Outputting
-permalink: /:categories/:title/
-paginate: 5 # amount of posts to show
-paginate_path: /page:num/
-timezone: # https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+# ----------------------------------------------------------------------------
+permalink: /writing/:title/
 
+# ----------------------------------------------------------------------------
+# Collections
+# ----------------------------------------------------------------------------
+collections:
+  writing:
+    output:    true
+    permalink: /writing/:path/
+  talks:
+    output:    true
+    permalink: /talks/:path/
 
-# Plugins (previously gems:)
-plugins:
-  - jekyll-paginate
-  - jekyll-sitemap
-  - jekyll-gist
-  - jekyll-feed
-  - jemoji
-
-# mimic GitHub Pages with --safe
-whitelist:
-  - jekyll-paginate
-  - jekyll-sitemap
-  - jekyll-gist
-  - jekyll-feed
-  - jemoji
-
-
-# Archives
-#  Type
-#  - GitHub Pages compatible archive pages built with Liquid ~> type: liquid (default)
-#  - Jekyll Archives plugin archive pages ~> type: jekyll-archives
-#  Path (examples)
-#  - Archive page should exist at path when using Liquid method or you can
-#    expect broken links (especially with breadcrumbs enabled)
-#  - <base_path>/tags/my-awesome-tag/index.html ~> path: /tags/
-#  - <base_path/categories/my-awesome-category/index.html ~> path: /categories/
-#  - <base_path/my-awesome-category/index.html ~> path: /
-category_archive:
-  type: liquid
-  path: /categories/
-tag_archive:
-  type: liquid
-  path: /tags/
-# https://github.com/jekyll/jekyll-archives
-# jekyll-archives:
-#   enabled:
-#     - categories
-#     - tags
-#   layouts:
-#     category: archive-taxonomy
-#     tag: archive-taxonomy
-#   permalinks:
-#     category: /categories/:name/
-#     tag: /tags/:name/
-
-
-# HTML Compression
-# - http://jch.penibelst.de/
-compress_html:
-  clippings: all
-  ignore:
-    envs: development
-
-
+# ----------------------------------------------------------------------------
 # Defaults
+# ----------------------------------------------------------------------------
 defaults:
-  # _posts
   - scope:
       path: ""
-      type: posts
+      type: writing
     values:
-      layout: single
-      author_profile: true
-      read_time: true
-      comments: # true
-      share: true
-      #related: true
-  # _pages
+      layout: post
+      related: true
+  - scope:
+      path: ""
+      type: talks
+    values:
+      layout: post
+      related: false
   - scope:
       path: ""
       type: pages
     values:
-      layout: single
-      author_profile: true
+      layout: page
+
+# ----------------------------------------------------------------------------
+# Plugins
+# ----------------------------------------------------------------------------
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+  - jemoji
+
+# Per-tag archive pages are generated by _plugins/tag_pages.rb (which scans
+# the writing and talks collections — something jekyll-archives can't do
+# out-of-the-box).
+
+# ----------------------------------------------------------------------------
+# Default OG image (overridable via `image:` front matter on a post)
+# ----------------------------------------------------------------------------
+image: /assets/og/default.png
+logo:  /assets/images/avatar.png

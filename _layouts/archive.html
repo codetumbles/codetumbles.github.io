@@ -1,26 +1,43 @@
 ---
 layout: default
 ---
+<section class="archive container-prose">
+  <header>
+    <h1 class="page-title">{{ page.title }}</h1>
+    {% if page.lede %}<p class="page-lede">{{ page.lede }}</p>{% endif %}
+  </header>
 
-{% if page.header.overlay_color or page.header.overlay_image or page.header.image %}
-  {% include page__hero.html %}
-{% elsif page.header.video.id and page.header.video.provider %}
-  {% include page__hero_video.html %}
-{% endif %}
+  {% if page.content and page.content != "" %}
+    <div class="prose">{{ content }}</div>
+  {% endif %}
 
-{% if page.url != "/" and site.breadcrumbs %}
-  {% unless paginator %}
-    {% include breadcrumbs.html %}
-  {% endunless %}
-{% endif %}
+  {%- assign coll_name = page.collection | default: "writing" -%}
+  {%- assign items = site[coll_name] | sort: "date" | reverse -%}
 
-<div id="main" role="main">
-  {% include sidebar.html %}
-
-  <div class="archive">
-    {% unless page.header.overlay_color or page.header.overlay_image %}
-      <h1 id="page-title" class="page__title">{{ page.title }}</h1>
-    {% endunless %}
-    {{ content }}
-  </div>
-</div>
+  {% if items.size > 0 %}
+    {%- assign by_year = items | group_by_exp: "p", "p.date | date: '%Y'" -%}
+    <div class="archive-tree">
+      {% for year_group in by_year %}
+        <section class="archive-year">
+          <h2 class="archive-year__label">{{ year_group.name }}</h2>
+          <ul class="archive-posts">
+            {% for post in year_group.items %}
+              <li class="archive-post">
+                <a class="archive-post__link" href="{{ post.url | relative_url }}">
+                  <h3 class="archive-post__title">{{ post.title }}</h3>
+                  <p class="archive-post__meta">
+                    <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%B %-d, %Y" }}</time>
+                    <span class="archive-post__sep">&middot;</span>
+                    <span>{% include reading-time.html words=post.content %}</span>
+                  </p>
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </section>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="archive-empty">Nothing here yet&mdash;watch this space.</p>
+  {% endif %}
+</section>

@@ -1,9 +1,25 @@
 ---
-layout: archive
+layout: default
 ---
+<section class="archive container-prose">
+  <header>
+    <h1 class="page-title">Posts tagged &ldquo;{{ page.title }}&rdquo;</h1>
+    <p class="page-lede">{{ page.posts.size }} post{% if page.posts.size != 1 %}s{% endif %}.</p>
+  </header>
 
-{{ content }}
+  {% assign items = page.posts | sort: "date" | reverse %}
+  {% if items.size > 0 %}
+    <ul class="post-list" style="margin-top:1.5rem;">
+      {% for item in items %}
+        <li class="post-list__item">
+          <span class="post-list__date">{{ item.date | date: "%d %b %Y" }}</span>
+          <a class="post-list__link" href="{{ item.url | relative_url }}">{{ item.title }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
 
-<div class="entries-{{ page.entries_layout | default: 'list' }}">
-  {% include posts-tag.html taxonomy=page.taxonomy type=page.entries_layout %}
-</div>
+  <p style="margin-top:2rem;font-family:var(--sans);font-size:0.92rem;">
+    <a href="{{ '/tags/' | relative_url }}">&larr; All tags</a>
+  </p>
+</section>

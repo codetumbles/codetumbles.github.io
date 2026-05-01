@@ -1,0 +1,20 @@
+{%- comment -%}
+Email signup form. Renders nothing unless:
+  - site.features.newsletter is truthy
+  - site.newsletter_url is set
+
+`include.context` ("post" or "footer") is used only to choose the heading.
+{%- endcomment -%}
+{% if site.features.newsletter and site.newsletter_url and site.newsletter_url != "" %}
+  {%- assign heading = "Subscribe to the newsletter" -%}
+  {%- if include.context == "post" -%}
+    {%- assign heading = "Liked this? Get the next post in your inbox." -%}
+  {%- endif -%}
+  <section class="newsletter" aria-label="Newsletter signup">
+    <h3 class="newsletter__title">{{ heading }}</h3>
+    <form class="newsletter__form" action="{{ site.newsletter_url }}" method="post" target="popupwindow">
+      <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address">
+      <button type="submit">Subscribe</button>
+    </form>
+  </section>
+{% endif %}

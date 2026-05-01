@@ -1,10 +1,9 @@
-# main links
+# Main navigation links rendered by _includes/header.html.
+# The site title (top-left) is the implicit "Home" link.
 main:
-   - title: "About"
-     url: /about/
-  # - title: "Sample Posts"
-  #   url: /year-archive/
-  # - title: "Sample Collections"
-  #   url: /collection-archive/
-  # - title: "Sitemap"
-  #   url: /sitemap/
+  - title: "Writing"
+    url:   /writing/
+  - title: "Talks"
+    url:   /talks/
+  - title: "About"
+    url:   /about/

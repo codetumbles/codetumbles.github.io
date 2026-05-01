@@ -2,5 +2,10 @@ _site/
 .sass-cache/
 .jekyll-cache/
 .jekyll-metadata
-Gemfile.lock
-minimal-mistakes-jekyll.gemspec
+.bundle/
+vendor/
+.DS_Store
+
+# Note: Gemfile.lock IS committed. For a site (vs. a gem), pinning exact
+# gem versions guarantees reproducible builds in CI and lets
+# `bundler-cache: true` in the GitHub Actions workflow actually cache.
