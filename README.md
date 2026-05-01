@@ -27,6 +27,12 @@ bin/new-post "My new post title"
 # creates _writing/YYYY-MM-DD-my-new-post-title.md with the right front matter
 ```
 
+To regenerate the default Open Graph image:
+
+```bash
+bin/make-og-image
+```
+
 ## Layout
 
 ```
@@ -34,7 +40,7 @@ _config.yml          site config + feature flags
 _data/navigation.yml main nav links
 _writing/            blog posts (date-prefixed filenames, sorted by `date:`)
 _talks/              conference talks, podcasts, etc.
-_pages/              static pages (about, search, start-here, archives)
+_pages/              static pages (about, search, tags, writing, talks)
 _includes/           reusable HTML fragments
 _layouts/            page templates (default, home, post, page, archive, tag)
 assets/css/main.scss site stylesheet (CSS custom properties for theming)
