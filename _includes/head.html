@@ -38,8 +38,10 @@
 {%- comment -%} Site stylesheet (includes our own minimal reset, no Bootstrap) {%- endcomment -%}
 <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
 
-{%- comment -%} Favicon (uses avatar as fallback) {%- endcomment -%}
-<link rel="icon" type="image/png" href="{{ '/assets/images/avatar.png' | relative_url }}">
+{%- comment -%} Favicons {%- endcomment -%}
+<link rel="icon" type="image/png" sizes="16x16" href="{{ '/assets/images/tumbleweed-favicon/favicon-16x16.png' | relative_url }}">
+<link rel="icon" type="image/png" sizes="32x32" href="{{ '/assets/images/tumbleweed-favicon/favicon-32x32.png' | relative_url }}">
+<link rel="apple-touch-icon" sizes="180x180" href="{{ '/assets/images/tumbleweed-favicon/apple-touch-icon-180x180.png' | relative_url }}">
 
 {%- comment -%} JSON-LD structured data {%- endcomment -%}
 {% include jsonld.html %}
