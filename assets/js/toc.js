@@ -23,6 +23,14 @@
     .filter(function (h) { return h.id; });
   if (headings.length === 0) return;
 
+  function headingText(heading) {
+    var clone = heading.cloneNode(true);
+    Array.prototype.slice.call(clone.querySelectorAll('.anchor-link')).forEach(function (anchor) {
+      anchor.remove();
+    });
+    return clone.textContent.trim();
+  }
+
   function buildList(headings, minLevel) {
     var list = document.createElement('ol');
     list.style.margin = 0;
@@ -63,7 +71,7 @@
       var li = document.createElement('li');
       var a = document.createElement('a');
       a.href = '#' + h.id;
-      a.textContent = h.textContent.replace(/^#\s*/, '').trim();
+      a.textContent = headingText(h);
       a.setAttribute('data-target-id', h.id);
       li.appendChild(a);
       stacks[stacks.length - 1].list.appendChild(li);
