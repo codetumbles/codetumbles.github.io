@@ -520,11 +520,18 @@ html.dark-mode .site-nav__toggle .icon-moon { display: inline-block; }
   background: var(--bg-code);
   border: 1px solid var(--border);
   border-radius: 6px;
+  margin: 1.5em 0;
   padding: 1rem;
   overflow-x: auto;
   line-height: 1.55;
 }
 .prose pre code { background: transparent; padding: 0; }
+.prose .highlighter-rouge {
+  margin: 1.5em 0;
+}
+.prose .highlighter-rouge pre {
+  margin: 0;
+}
 
 /* ---------- Heading anchors ---------------------------------------------- */
 
