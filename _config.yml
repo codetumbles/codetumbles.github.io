@@ -173,3 +173,4 @@ plugins:
 # ----------------------------------------------------------------------------
 image: /assets/og/default.png
 logo:  /assets/images/avatar.png
+future: true
