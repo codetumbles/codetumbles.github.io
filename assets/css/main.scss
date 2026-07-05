@@ -489,6 +489,25 @@ html.dark-mode .site-nav__toggle .icon-moon { display: inline-block; }
 
 .prose img { max-width: 100%; height: auto; border-radius: 6px; margin: 0 auto; }
 
+.prose .image-row {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  margin: 2rem auto 0.5rem;
+}
+
+.prose .image-row img {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .prose .image-row {
+    flex-direction: column;
+  }
+}
+
 .prose .caption {
   display: block;
   text-align: center;
