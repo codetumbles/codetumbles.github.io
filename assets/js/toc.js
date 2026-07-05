@@ -57,7 +57,7 @@
         stacks.push({ level: stacks[stacks.length - 1].level + 1, list: nestedList });
       }
 
-      if (level > stacks[stacks.length - 1].level) {
+      if (level > stacks[stacks.length - 1].level && stacks[stacks.length - 1].level >= minLevel) {
         var parentLi = stacks[stacks.length - 1].list.lastElementChild;
         if (parentLi) {
           var nested = document.createElement('ol');
@@ -66,6 +66,10 @@
           parentLi.appendChild(nested);
           stacks.push({ level: level, list: nested });
         }
+      } else if (level > stacks[stacks.length - 1].level && stacks[stacks.length - 1].level < minLevel) {
+          // If we are at the root level (minLevel - 1), we just update the stack level
+          // to match the current heading level without nesting under a non-existent parent.
+          stacks[stacks.length - 1].level = level;
       }
 
       var li = document.createElement('li');
