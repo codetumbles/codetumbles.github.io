@@ -20,7 +20,7 @@ author:
   bio:     "Software Engineer"
   avatar:  "/assets/images/avatar.png"
   twitter: "ozmanakram"
-  github:  "codetumbles"
+  github:  "CodingTumbleweed"
 
 twitter:
   username: ozmanakram
@@ -31,7 +31,7 @@ social:
   name:  "Usman Akram"
   links:
     - "https://twitter.com/ozmanakram"
-    - "https://github.com/codetumbles"
+    - "https://github.com/CodingTumbleweed"
 
 # ----------------------------------------------------------------------------
 # Feature flags
