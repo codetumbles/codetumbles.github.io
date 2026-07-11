@@ -19,7 +19,7 @@ author:
   name:    "Usman Akram"
   bio:     "Software Engineer"
   avatar:  "/assets/images/avatar.png"
-  twitter: "ozmanakram"
+  linkedin: "usman-akram"
   github:  "CodingTumbleweed"
 
 twitter:
@@ -30,7 +30,7 @@ social:
   type:  Person
   name:  "Usman Akram"
   links:
-    - "https://twitter.com/ozmanakram"
+    - "https://www.linkedin.com/in/usman-akram/"
     - "https://github.com/CodingTumbleweed"
 
 # ----------------------------------------------------------------------------
