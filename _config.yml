@@ -49,6 +49,7 @@ features:
   heading_anchors:     true
   related_posts:       true
   reading_progress:    true
+  image_zoom:          true
   newsletter:          false   # set true once `newsletter_url` is filled in
   mermaid:             false   # global default; per-post opt-in via `mermaid: true`
   typewriter:          false

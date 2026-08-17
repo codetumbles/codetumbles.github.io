@@ -35,6 +35,10 @@
     {% if page.toc %}
       <script src="{{ '/assets/js/toc.js' | relative_url }}" defer></script>
     {% endif %}
+    {% if site.features.image_zoom %}
+      <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" defer></script>
+      <script src="{{ '/assets/js/zoom.js' | relative_url }}" defer></script>
+    {% endif %}
   {% endif %}
 
   {%- comment -%} Optional features {%- endcomment -%}
