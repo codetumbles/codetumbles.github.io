@@ -1,21 +1,24 @@
 document.addEventListener('DOMContentLoaded', function () {
-  // Only zoom images inside the main prose content
   var images = document.querySelectorAll('.prose img');
   if (images.length === 0) return;
 
-  // Initialize Medium Zoom
-  var zoom = mediumZoom(images, {
-    margin: 24,
-    background: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#ffffff',
-    scrollOffset: 40
+  // Initialize Zooming (an alternative to medium-zoom that allows upscaling)
+  var zooming = new Zooming({
+    bgColor: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#ffffff',
+    bgOpacity: 0.95,
+    customSize: '100%', // Forces the image to zoom as much as possible to fit the screen
+    scaleBase: 1,
+    zIndex: 999
   });
+
+  zooming.listen(images);
 
   // Update background color if dark mode is toggled
   var observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
       if (mutation.attributeName === 'class') {
-        zoom.update({
-          background: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#ffffff'
+        zooming.config({
+          bgColor: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#ffffff'
         });
       }
     });
