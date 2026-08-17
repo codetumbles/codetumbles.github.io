@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function () {
     zIndex: 999
   });
 
-  zooming.listen(images);
+  zooming.listen('.prose img');
 
   // Update background color if dark mode is toggled
   var observer = new MutationObserver(function(mutations) {
