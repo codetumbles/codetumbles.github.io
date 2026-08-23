@@ -30,7 +30,7 @@ That's a useful mental model for local development. But it's not how a high-thro
 
 V1 isn't built around the concept of "a request going through a model." It's built around **the token work that can be scheduled *right now*.** We'll come back to what that means in Bottleneck 4.
 
-![vLLM V1 architecture request flow showing LLM Processor, Engine Core, KV Cache Manager, and Model Runner]({{ "/assets/images/vllm-evolution/v1-request-flow.png" | relative_url }})
+![vLLM V1 architecture request flow showing LLM Processor, Engine Core, KV Cache Manager, and Model Runner]({{ "/assets/images/writing/vllm-evolution/v1-request-flow.png" | relative_url }})
 *The vLLM V1 architecture breaks the serving loop into distinct, highly optimized components. The **LLM Processor** handles incoming requests and metadata; the **Engine Core** manages queues and scheduling; the **KV Cache Manager** allocates physical memory; and the **Model Runner** flattens inputs, executes the model, and samples tokens.*
 {: .caption }
 
@@ -60,7 +60,7 @@ The architecture of vLLM makes the most sense when viewed as an evolution of bot
 The KV cache is a critical component of LLM serving as it reduces the intrinsic compute complexity of transformers from **quadratic O(n²)** to **linear O(n)**. During autoregressive generation, a transformer stores key and value tensors for previous tokens to avoid recomputing the prefix. 
 Because requests can have different lengths and we don't know the final output length when a request starts, this makes allocating the KV Cache memory tricky. 
 
-![KV cache mechanism showing prefill and decode steps]({{ "/assets/images/vllm-evolution/kv-cache-mechanism.png" | relative_url }})
+![KV cache mechanism showing prefill and decode steps]({{ "/assets/images/writing/vllm-evolution/kv-cache-mechanism.png" | relative_url }})
 *Prefill writes all prompt K/V into the cache in one shot. Each decode step restores cached history, attends with a single new query, and appends one new K/V pair for the next step.*
 {: .caption }
 
@@ -68,7 +68,7 @@ If we pre-allocate a contiguous chunk of memory for a request's maximum possible
 1. **Internal fragmentation:** We reserve slots the request never ends up using.
 2. **External fragmentation:** We leave unusable gaps of free memory between allocations.
 
-![Contiguous KV cache allocation wastes memory through internal and external fragmentation.]({{ "/assets/images/vllm-evolution/kv-cache-2.png" | relative_url }})
+![Contiguous KV cache allocation wastes memory through internal and external fragmentation.]({{ "/assets/images/writing/vllm-evolution/kv-cache-2.png" | relative_url }})
 *Contiguous KV cache reservation creates both internal fragmentation (reserved but unused slots) and external fragmentation (stranded free memory).*
 {: .caption }
 
@@ -81,7 +81,7 @@ Logical blocks:  [0, 1, 2]
 Physical blocks: [42, 7, 91]
 ```
 
-![PagedAttention maps a request's logical KV blocks to non-contiguous physical blocks.]({{ "/assets/images/vllm-evolution/kv-cache-3.png" | relative_url }})
+![PagedAttention maps a request's logical KV blocks to non-contiguous physical blocks.]({{ "/assets/images/writing/vllm-evolution/kv-cache-3.png" | relative_url }})
 *PagedAttention maintains logical order while allowing physical blocks to be allocated wherever space is available.*
 {: .caption }
 
@@ -97,7 +97,7 @@ In traditional ML models (like image classification), inputs are fixed-size and 
 
 However, in the real world, requests arrive at random intervals. Waiting for exactly $N$ requests adds unacceptable latency if traffic is low. This led to **dynamic batching**: the server waits for a short time window (e.g., 10ms) and batches whatever requests have arrived, up to a maximum limit.
 
-![Static vs Dynamic Batching]({{ "/assets/images/vllm-evolution/static-vs-dynamic-batching.png" | relative_url }})
+![Static vs Dynamic Batching]({{ "/assets/images/writing/vllm-evolution/static-vs-dynamic-batching.png" | relative_url }})
 *Dynamic batching improves responsiveness by executing whatever requests are available within a time window, rather than waiting for a fixed batch size.*
 {: .caption }
 
@@ -107,13 +107,13 @@ Dynamic batching works perfectly for traditional models where every request take
 
 The most obvious irregularity is prompt length. If we pack requests into a 2D `[batch_size, seq_len]` tensor, every sequence must be padded to the length of the longest one in the batch. The attention mask ignores the padding, but the GPU still allocates and processes those slots.
 
-![Padding wastes compute when sequences in a batch have different lengths]({{ "/assets/images/vllm-evolution/padding-issue.png" | relative_url }})
+![Padding wastes compute when sequences in a batch have different lengths]({{ "/assets/images/writing/vllm-evolution/padding-issue.png" | relative_url }})
 *Prompt 0 needs 7 tokens; Prompt 1 needs only 5. Padding the shorter sequence to match the batch wastes compute on slots the model never uses.*
 {: .caption }
 
 The first fix is **flattening**: instead of a rectangular matrix, the engine concatenates all scheduled tokens into a single 1D array.
 
-![Two prompts are flattened into one concatenated token buffer.]({{ "/assets/images/vllm-evolution/flattened-sequences.png" | relative_url }})
+![Two prompts are flattened into one concatenated token buffer.]({{ "/assets/images/writing/vllm-evolution/flattened-sequences.png" | relative_url }})
 *Flattening removes the rectangular batch shape by concatenating each request's tokens into one contiguous buffer.*
 {: .caption }
 
@@ -128,7 +128,7 @@ query_start_loc: [0, 1, 2, 6]
 
 Flattening alone is not enough. If we ran standard causal attention on this concatenated buffer, tokens from one request could attend to tokens from another. We solve it by applying a **block-diagonal attention mask** so each request only attends within its own sequence. The result is not one large causal triangle, but several smaller ones along the diagonal, one per request, sized to sequence length (number of tokens) of each request i.e. **Ragged batching**. Sequence lengths are "ragged" (uneven), and the mask shape reflects that.
 
-![Ragged batching uses a block-diagonal attention mask on flattened sequences]({{ "/assets/images/vllm-evolution/ragged-batching.png" | relative_url }})
+![Ragged batching uses a block-diagonal attention mask on flattened sequences]({{ "/assets/images/writing/vllm-evolution/ragged-batching.png" | relative_url }})
 ***Ragged Batching:** A block-diagonal mask ensures Prompt 0 and Prompt 1 never interact. Each request gets its own causal block; the off-diagonal regions stay masked out.*
 {: .caption }
 
@@ -148,7 +148,7 @@ Even without padding, dynamic batching still treats a batch as a unit of work. T
 
 **Iteration-level scheduling** fixes this. After every single generation step, the engine evaluates the batch. If a request finishes, it exits immediately, and a new request is scheduled into that slot for the very next iteration.
 
-![Static batching vs Continuous batching showing empty slots being backfilled]({{ "/assets/images/vllm-evolution/continuous-batching-iterative-scheduling.png" | relative_url }})
+![Static batching vs Continuous batching showing empty slots being backfilled]({{ "/assets/images/writing/vllm-evolution/continuous-batching-iterative-scheduling.png" | relative_url }})
 *(Left) Without iterative scheduling, early-finishing requests ($S_3$, $S_1$) leave idle GPU slots (white squares) because the batch cannot accept new work until the longest request ($S_2$) finishes. (Right) Iterative scheduling immediately backfills finished slots with new requests ($S_5$, $S_6$, $S_7$). (Yellow slots represent prefill; blue slots represent decode).*
 {: .caption }
 
@@ -181,7 +181,7 @@ On a single **H100 (80 GB)** running Llama 3.1 8B at `gpu_memory_utilization=0.9
 
 Under the hood, chunked prefill combines the **KV cache** and the **attention mask**. During the first prefill split, the engine computes attention over the initial chunk and stores the resulting KV states. During the next split, it prepends those stored KV states to the new chunk's keys and values, and adapts the attention mask so the new tokens attend to the cached prefix correctly. Each subsequent chunk picks up where the last one left off, without recomputing the prefix.
 
-![Chunked prefill splits a long prompt across multiple attention passes]({{ "/assets/images/vllm-evolution/chunked-prefill.png" | relative_url }})
+![Chunked prefill splits a long prompt across multiple attention passes]({{ "/assets/images/writing/vllm-evolution/chunked-prefill.png" | relative_url }})
 *(Left) Non-chunked prefill computes one large $n \times n$ attention matrix. If the sequence does not fit in a single batch, the tail is left unprocessed. (Right) Chunked prefill splits the prompt into two passes: the first chunk stores its KV states; the second chunk prepends those states and computes a smaller attention matrix over the remaining tokens.*
 {: .caption }
 
@@ -193,7 +193,7 @@ Chunked prefill lets prefill and decode share an iteration. That creates a new e
 
 Standard GPU batching leans on batched matrix multiply (`torch.bmm`). The idea is to stack one tensor per request and run a single kernel over the whole stack. That only works when every slice has the same shape. If four requests contribute 1, 1, 2, and 3 tokens this iteration, you have four matrices with different row counts. `torch.bmm` expects them to line up as `[b, m, k]` times `[b, k, n]`, with the same `m` for every request. The only way to force a match is padding the shorter requests up to the longest, which brings back the waste we were trying to avoid.
 
-![Selective batching: prefill vs decode tensor shapes for attention and non-attention layers]({{ "/assets/images/vllm-evolution/selective-batching-prefill-decode.png" | relative_url }})
+![Selective batching: prefill vs decode tensor shapes for attention and non-attention layers]({{ "/assets/images/writing/vllm-evolution/selective-batching-prefill-decode.png" | relative_url }})
 *(Prefill) Requests X1, X2, X3, and X4 contribute 1, 1, 2, and 3 tokens. Non-attention layers flatten all 7 tokens into `[D, 7, H]` (**D**: hidden size, **H**: No. of heads), but attention cannot form a uniform `[4, D, m, H]` tensor because `m` differs per request. (Decode) Every request contributes exactly 1 token, so both paths align on a batch dimension of 4.*
 {: .caption }
 
@@ -216,7 +216,7 @@ Four different `m` values (1, 1, 2, 3), so attention cannot form a uniform `[4, 
 
 **Selective batching**, from the Orca paper, comes with a practical compromise: run linear layers on one flattened batch, split attention per request, then merge the results back. The diagram below walks through the **prefill** case, with $X_1$, $X_2$, $X_3$, and $X_4$ contributing 1, 1, 2, and 3 tokens.
 
-![Orca selective batching: batched linear execution, attention splitting, and merge]({{ "/assets/images/vllm-evolution/selective-batching-orca-mechanism.png" | relative_url }})
+![Orca selective batching: batched linear execution, attention splitting, and merge]({{ "/assets/images/writing/vllm-evolution/selective-batching-orca-mechanism.png" | relative_url }})
 *All 7 tokens flatten to `[7, H]`, pass through QKV linear together, split for per-request attention (with KV history from the Attention K/V Manager), then merge back for the output projection.*
 {: .caption }
 
@@ -244,7 +244,7 @@ With memory optimized and the GPU crunching ragged batches, the bottleneck moves
 
 ### Where the CPU became the bottleneck
 
-![Profiling breakdown for Llama 3 8B on H100]({{ "/assets/images/vllm-evolution/cpu-load-breakdown.png" | relative_url }})
+![Profiling breakdown for Llama 3 8B on H100]({{ "/assets/images/writing/vllm-evolution/cpu-load-breakdown.png" | relative_url }})
 *On V0, GPU execution was only 38% of wall time. API serving (33%) and scheduling (29%) consumed the rest.*
 {: .caption }
 
@@ -256,7 +256,7 @@ Three separate problems compounded on each other:
 
 **Synchronous lockstep execution.** Even when the CPU did get control, it ran as a single-threaded state machine. Each iteration was a hard barrier: the CPU scheduled and prepared inputs while the GPU waited, the GPU ran forward passes while the CPU waited, then the CPU sampled and post-processed outputs while the GPU waited again. The next step could not start until all three phases finished, so the GPU alternated between short bursts of compute and long idle stretches.
 
-![V0 synchronous blocking execution: CPU prepare, GPU kernel, CPU post-process in strict sequence]({{ "/assets/images/vllm-evolution/v0-synchronous-execution.png" | relative_url }})
+![V0 synchronous blocking execution: CPU prepare, GPU kernel, CPU post-process in strict sequence]({{ "/assets/images/writing/vllm-evolution/v0-synchronous-execution.png" | relative_url }})
 *Each iteration is a lockstep pipeline. Only one component is active at a time; the rest sits idle until the full loop completes.*
 {: .caption }
 
@@ -266,7 +266,7 @@ V1 did not try to solve all three problems with one change. It targeted each one
 
 **Isolate the API from the engine.** To break the GIL deadlock, V1 **split HTTP serving from the inference engine** and connected them over a **ZMQ socket**. The frontend handles API I/O, tokenization, and detokenization in one process. A dedicated **EngineCore** process runs the tight scheduling and GPU execution loop in another. They no longer compete for the GIL, and each can run on a different CPU core. While the frontend formats a response for request A, the EngineCore can already be scheduling and launching request B on the GPU.
 
-![V0 single-process vs V1 split-process architecture with ZMQ between API server and engine]({{ "/assets/images/vllm-evolution/v1-process-separation.png" | relative_url }})
+![V0 single-process vs V1 split-process architecture with ZMQ between API server and engine]({{ "/assets/images/writing/vllm-evolution/v1-process-separation.png" | relative_url }})
 *V0 packed the API server and engine into one Python process (top). V1 splits them into separate processes connected by ZMQ (bottom), so each can run on its own CPU core.*
 {: .caption }
 
@@ -274,7 +274,7 @@ V1 did not try to solve all three problems with one change. It targeted each one
 
 **Overlap CPU and GPU phases.** In V0, the GPU could not start its next forward pass until the CPU finished sampling outputs and preparing the next batch. Each iteration was strictly serial: forward, then post-process, then forward again. V1 pipelines the two. While the GPU runs pass N+1, the CPU handles output processing for pass N. A background thread pythonizes sampler outputs, and device-to-host copies are deferred so the next kernel can launch without waiting for the previous one to fully land on the host.
 
-![Latency hiding: V0 serial forward-then-post-process vs V1 overlapping GPU and CPU phases]({{ "/assets/images/vllm-evolution/v1-cpu-gpu-overlap.png" | relative_url }})
+![Latency hiding: V0 serial forward-then-post-process vs V1 overlapping GPU and CPU phases]({{ "/assets/images/writing/vllm-evolution/v1-cpu-gpu-overlap.png" | relative_url }})
 ***Before**: the GPU waits for CPU post-processing between every forward pass. 
 **After**: output processing for pass N runs while the GPU executes pass N+1, hiding host latency behind GPU work.*
 {: .caption }
@@ -287,7 +287,7 @@ Continuous batching taught V0 how to *execute* mixed work: prefill and decode sh
 
 V0's scheduler thought in phases. A request moved from **Waiting** through **Prefill**, into **Running**, then looped through **Decode** until finished. When GPU memory ran out, the scheduler preempted running requests: swap KV cache to CPU and park in **Swapped**, or discard the cache and send the request back to **Waiting** to recompute.
 
-![V0 phase-based scheduling: Waiting Queue, Prefill Step, Running Queue, Decode Step, and Swapped Queue]({{ "/assets/images/vllm-evolution/v0-phase-scheduling.png" | relative_url }})
+![V0 phase-based scheduling: Waiting Queue, Prefill Step, Running Queue, Decode Step, and Swapped Queue]({{ "/assets/images/writing/vllm-evolution/v0-phase-scheduling.png" | relative_url }})
 *V0 treats prefill and decode as separate scheduling stages with distinct queues and transitions.*
 {: .caption }
 
@@ -311,13 +311,13 @@ tokens_to_schedule = num_tokens_with_spec - num_computed_tokens
 
 Each step, the scheduler fills a fixed **token budget** (`max_num_batched_tokens`). Running requests get first pick. Waiting requests fill whatever budget remains. The output is a simple map: `{request_id: num_tokens}`.
 
-![V1 scheduler flow: token budget consumed from Running Queue first, then Waiting Queue]({{ "/assets/images/vllm-evolution/v1-scheduler-flow.png" | relative_url }})
+![V1 scheduler flow: token budget consumed from Running Queue first, then Waiting Queue]({{ "/assets/images/writing/vllm-evolution/v1-scheduler-flow.png" | relative_url }})
 *V1 replaces separate prefill and decode stages with one scheduler that allocates tokens from a shared budget.*
 {: .caption }
 
 The worked example below makes this concrete. Three requests with 3, 5, and 12 prompt tokens share a budget of 10. In Step 0, R1 and R2 fully prefill while R3 gets only 2 of its 12 tokens. By Step 1, R1 and R2 are already decoding while R3 continues prefilling. A long prompt no longer monopolizes a step.
 
-![V1 token budget worked example: R1, R2, R3 interleaved across steps with budget of 10]({{ "/assets/images/vllm-evolution/v1-token-budgeting.png" | relative_url }})
+![V1 token budget worked example: R1, R2, R3 interleaved across steps with budget of 10]({{ "/assets/images/writing/vllm-evolution/v1-token-budgeting.png" | relative_url }})
 *Chunked prefill, decode, and mixed-phase batches all emerge from the same `{request_id: num_tokens}` allocation.*
 {: .caption }
 
@@ -342,7 +342,7 @@ Every step, the model runner juggles block tables, sampling parameters, preempti
 
 In V1, these views were tightly coupled. The persistent batch often *was* the model input. That meant the first `N` rows of the persistent table had to match the scheduled requests, in the right order, every step. When the schedule changed, the runner physically reordered rows in the persistent batch.
 
-![V1 persistent batch: request D joins, then request A finishes and D is moved up to fill the gap]({{ "/assets/images/vllm-evolution/v1-persistent-batch.png" | relative_url }})
+![V1 persistent batch: request D joins, then request A finishes and D is moved up to fill the gap]({{ "/assets/images/writing/vllm-evolution/v1-persistent-batch.png" | relative_url }})
 *In V1, finishing request A forces a physical reorder: request D moves from row 4 to row 2 so the active batch stays contiguous.*
 {: .caption }
 
@@ -418,13 +418,13 @@ sampling metadata = [temperature for req_B, req_A, req_C]
 
 No row moves when A finishes and D joins. D simply claims the next free persistent row. The gather kernel reads the rows the scheduler asked for and packs them into the layout the attention backend expects this step.
 
-![MRV2 persistent batch: stable storage on the left, gather by req_order into the input block table on the right]({{ "/assets/images/vllm-evolution/mrv2-persistent-batch.png" | relative_url }})
+![MRV2 persistent batch: stable storage on the left, gather by req_order into the input block table on the right]({{ "/assets/images/writing/vllm-evolution/mrv2-persistent-batch.png" | relative_url }})
 *Persistent rows stay put. A GPU gather reads `idx_mapping` and builds the per-step input block table in whatever order the scheduler needs.*
 {: .caption }
 
 MRV2 drops `CachedRequestState` and physical reordering. Early benchmarks from the [vLLM MRV2 blog](https://vllm.ai/blog/2026-03-24-mrv2): **56% higher throughput** on Qwen3-0.6B (1×GB200), where host-side input prep dominates; **6.3% lower mean TPOT** on GLM-4.7-FP8 with MTP=1 (4×GB200), where zero-sync input prep lets spec decode avoid the CPU/GPU barriers V1 could not shed cleanly.
 
-![Mean TPOT with MTP: MRV2 vs MRV1 on GLM-4.7-FP8 across request rates]({{ "/assets/images/vllm-evolution/mrv2-glm-tpot.png" | relative_url }})
+![Mean TPOT with MTP: MRV2 vs MRV1 on GLM-4.7-FP8 across request rates]({{ "/assets/images/writing/vllm-evolution/mrv2-glm-tpot.png" | relative_url }})
 *GLM-4.7-FP8, MTP=1, 4×GB200. MRV2 holds a consistent TPOT edge across request rates; the gap is 6.3% at saturation.*
 {: .caption }
 

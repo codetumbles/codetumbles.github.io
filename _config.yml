@@ -18,7 +18,7 @@ timezone:      Etc/UTC
 author:
   name:    "Usman Akram"
   bio:     "Software Engineer"
-  avatar:  "/assets/images/avatar.png"
+  avatar:  "/assets/images/site/avatar.png"
   linkedin: "usman-akram"
   github:  "CodingTumbleweed"
 
@@ -173,5 +173,5 @@ plugins:
 # Default OG image (overridable via `image:` front matter on a post)
 # ----------------------------------------------------------------------------
 image: /assets/og/default.png
-logo:  /assets/images/avatar.png
+logo:  /assets/images/site/avatar.png
 future: true
