@@ -508,18 +508,21 @@ html.dark-mode .site-nav__toggle .icon-moon { display: inline-block; }
   }
 }
 
-.prose .caption {
+.prose .caption,
+.prose p:has(img) + p:has(> em:only-child) {
   display: block;
   text-align: center;
   font-family: var(--sans);
   font-size: 0.85rem;
   color: var(--fg-muted);
   margin-top: 0.5rem;
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
   line-height: 1.5;
 }
-.prose .caption em {
-  font-style: normal;
+/* If they wrap the caption in italics, let's keep it italicized for a better look */
+.prose .caption em,
+.prose p:has(img) + p:has(> em:only-child) em {
+  font-style: italic;
 }
 
 .prose hr { border: 0; border-top: 1px solid var(--border); margin: 2.5em 0; }
