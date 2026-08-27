@@ -532,13 +532,14 @@ html.dark-mode .site-nav__toggle .icon-moon { display: inline-block; }
   width: 100%;
   margin: 2.5rem 0;
   font-family: var(--sans);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   border-collapse: collapse;
   font-variant-numeric: tabular-nums;
   /* Enable horizontal scroll on small screens without breaking markdown */
   display: block;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  color: var(--fg);
 }
 
 .prose table th,
@@ -550,15 +551,18 @@ html.dark-mode .site-nav__toggle .icon-moon { display: inline-block; }
 }
 
 .prose table th {
-  font-weight: 700;
-  color: var(--fg);
+  font-weight: 600;
+  color: var(--fg-muted);
   background-color: var(--bg-elevated);
-  border-bottom: 2px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.8rem;
   white-space: nowrap;
 }
 
 .prose table tbody tr {
-  transition: background-color 0.15s ease;
+  transition: background-color 0.2s ease;
 }
 
 .prose table tbody tr:hover {
@@ -567,10 +571,10 @@ html.dark-mode .site-nav__toggle .icon-moon { display: inline-block; }
 
 /* Subtle zebra striping */
 .prose table tbody tr:nth-child(even) {
-  background-color: rgba(0, 0, 0, 0.015);
+  background-color: rgba(0, 0, 0, 0.02);
 }
 html.dark-mode .prose table tbody tr:nth-child(even) {
-  background-color: rgba(255, 255, 255, 0.015);
+  background-color: rgba(255, 255, 255, 0.02);
 }
 
 .prose table tbody tr:last-child td {
