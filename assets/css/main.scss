@@ -90,6 +90,10 @@ html.dark-mode {
   --link:          #6aa9ff;
   --link-hover:    #a8c8ff;
   --accent:        #ff7eb6;
+  --callout-info:  #4d9bfa;
+  --callout-warn:  #f59b42;
+  --callout-tip:   #2bcfb9;
+  --callout-aside: #8a9ca3;
   --shadow:        0 1px 2px rgba(0,0,0,0.4);
 }
 
@@ -675,16 +679,37 @@ html.dark-mode .prose table tbody tr:nth-child(even) {
 /* ---------- Callouts ------------------------------------------------------ */
 
 .callout {
-  margin: 1.5em 0;
-  padding: 0.85rem 1rem;
+  margin: 1.8em 0;
+  padding: 1.15rem 1.25rem;
   border-left: 4px solid var(--callout-info);
-  background: var(--bg-elevated);
-  border-radius: 0 4px 4px 0;
+  background: color-mix(in srgb, var(--callout-info) 8%, var(--bg));
+  border-radius: 6px;
+  border-top: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  line-height: 1.6;
 }
-.callout--info  { border-color: var(--callout-info); }
-.callout--warn  { border-color: var(--callout-warn); }
-.callout--tip   { border-color: var(--callout-tip); }
-.callout--aside { border-color: var(--callout-aside); color: var(--fg-muted); }
+.callout--info { 
+  border-left-color: var(--callout-info); 
+  background: color-mix(in srgb, var(--callout-info) 8%, var(--bg));
+}
+.callout--warn { 
+  border-left-color: var(--callout-warn); 
+  background: color-mix(in srgb, var(--callout-warn) 8%, var(--bg));
+}
+.callout--tip { 
+  border-left-color: var(--callout-tip); 
+  background: color-mix(in srgb, var(--callout-tip) 8%, var(--bg));
+}
+.callout--aside { 
+  border-left-color: var(--callout-aside); 
+  background: var(--bg-elevated); 
+  color: var(--fg-muted); 
+}
 .callout > :first-child { margin-top: 0; }
 .callout > :last-child  { margin-bottom: 0; }
 
