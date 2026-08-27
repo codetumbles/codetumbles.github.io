@@ -527,6 +527,56 @@ html.dark-mode .site-nav__toggle .icon-moon { display: inline-block; }
 
 .prose hr { border: 0; border-top: 1px solid var(--border); margin: 2.5em 0; }
 
+/* ---------- Tables ------------------------------------------------------- */
+.prose table {
+  width: 100%;
+  margin: 2.5rem 0;
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  /* Enable horizontal scroll on small screens without breaking markdown */
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.prose table th,
+.prose table td {
+  padding: 0.85rem 1.125rem;
+  text-align: left;
+  line-height: 1.5;
+  border-bottom: 1px solid var(--border);
+}
+
+.prose table th {
+  font-weight: 700;
+  color: var(--fg);
+  background-color: var(--bg-elevated);
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+
+.prose table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.prose table tbody tr:hover {
+  background-color: var(--bg-elevated);
+}
+
+/* Subtle zebra striping */
+.prose table tbody tr:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.015);
+}
+html.dark-mode .prose table tbody tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.015);
+}
+
+.prose table tbody tr:last-child td {
+  border-bottom: none;
+}
+
 .prose code,
 .prose pre {
   font-family: var(--mono);
