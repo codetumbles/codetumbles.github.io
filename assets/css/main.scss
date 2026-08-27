@@ -90,10 +90,6 @@ html.dark-mode {
   --link:          #6aa9ff;
   --link-hover:    #a8c8ff;
   --accent:        #ff7eb6;
-  --callout-info:  #4d9bfa;
-  --callout-warn:  #f59b42;
-  --callout-tip:   #2bcfb9;
-  --callout-aside: #8a9ca3;
   --shadow:        0 1px 2px rgba(0,0,0,0.4);
 }
 
@@ -485,10 +481,15 @@ html.dark-mode .site-nav__toggle .icon-moon { display: inline-block; }
 
 .prose blockquote {
   border-left: 3px solid var(--border);
-  margin: 1.5em 0;
-  padding: 0.2em 1rem;
+  margin: 1.8em 0;
+  padding: 0.5rem 1.25rem;
   color: var(--fg-muted);
   font-style: italic;
+  font-size: 1.05rem;
+  background: transparent;
+}
+.prose blockquote p:last-child {
+  margin-bottom: 0;
 }
 
 .prose img { max-width: 100%; height: auto; border-radius: 6px; margin: 0 auto; }
@@ -679,39 +680,33 @@ html.dark-mode .prose table tbody tr:nth-child(even) {
 /* ---------- Callouts ------------------------------------------------------ */
 
 .callout {
+  --c-color: var(--callout-info);
   margin: 1.8em 0;
-  padding: 1.15rem 1.25rem;
-  border-left: 4px solid var(--callout-info);
-  background: color-mix(in srgb, var(--callout-info) 8%, var(--bg));
-  border-radius: 6px;
-  border-top: 1px solid var(--border);
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  box-shadow: var(--shadow);
+  padding: 1.25rem 1.5rem;
+  border-left: 4px solid var(--c-color);
+  background: color-mix(in srgb, var(--c-color) 8%, var(--bg));
+  border-radius: 0 8px 8px 0;
   color: var(--fg);
-  font-family: var(--sans);
-  font-size: 0.95rem;
+  font-size: 0.98rem;
   line-height: 1.6;
 }
-.callout--info { 
-  border-left-color: var(--callout-info); 
-  background: color-mix(in srgb, var(--callout-info) 8%, var(--bg));
+
+html.dark-mode .callout {
+  background: color-mix(in srgb, var(--c-color) 15%, var(--bg));
 }
-.callout--warn { 
-  border-left-color: var(--callout-warn); 
-  background: color-mix(in srgb, var(--callout-warn) 8%, var(--bg));
-}
-.callout--tip { 
-  border-left-color: var(--callout-tip); 
-  background: color-mix(in srgb, var(--callout-tip) 8%, var(--bg));
-}
-.callout--aside { 
-  border-left-color: var(--callout-aside); 
-  background: var(--bg-elevated); 
-  color: var(--fg-muted); 
-}
+
+.callout--info  { --c-color: var(--callout-info); }
+.callout--warn  { --c-color: var(--callout-warn); }
+.callout--tip   { --c-color: var(--callout-tip); }
+.callout--aside { --c-color: var(--callout-aside); }
+
 .callout > :first-child { margin-top: 0; }
 .callout > :last-child  { margin-bottom: 0; }
+
+/* Tinted inline code blocks inside callouts to match */
+.callout code {
+  background: color-mix(in srgb, var(--c-color) 12%, var(--bg));
+}
 
 /* ---------- Mermaid ------------------------------------------------------- */
 
