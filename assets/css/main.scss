@@ -533,14 +533,28 @@ html.dark-mode .site-nav__toggle .icon-moon { display: inline-block; }
   margin: 2.5rem 0;
   font-family: var(--sans);
   font-size: 0.95rem;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-variant-numeric: tabular-nums;
   /* Enable horizontal scroll on small screens without breaking markdown */
   display: block;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   color: var(--fg);
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
+html.dark-mode .prose table {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Ensure the border radius clips correctly on child rows without needing wrapper divs */
+.prose table th:first-child { border-top-left-radius: 8px; }
+.prose table th:last-child { border-top-right-radius: 8px; }
+.prose table tbody tr:last-child td:first-child { border-bottom-left-radius: 8px; }
+.prose table tbody tr:last-child td:last-child { border-bottom-right-radius: 8px; }
 
 .prose table th,
 .prose table td {
