@@ -71,7 +71,6 @@ summary { display: list-item; cursor: pointer; }
   --callout-tip:   #2aa198;
   --callout-danger:#dc322f;
   --callout-aside: #586e75;
-  --quote-border:  #ff3366;
   --shadow:        0 1px 2px rgba(0,0,0,0.05);
   --serif:         "Merriweather", Georgia, "Times New Roman", serif;
   --sans:          "Raleway", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -97,7 +96,6 @@ html.dark-mode {
   --callout-tip:   #42d4c4;
   --callout-danger:#ff6b6b;
   --callout-aside: #8b9ca3;
-  --quote-border:  #ff5c8a;
   --shadow:        0 1px 2px rgba(0,0,0,0.4);
 }
 
@@ -488,15 +486,14 @@ html.dark-mode .site-nav__toggle .icon-moon { display: inline-block; }
 .prose li { line-height: 1.75; }
 
 .prose blockquote {
-  border-left: 4px solid var(--quote-border);
+  border-left: 4px solid #c5030c;
   margin: 1.8em 0;
   padding: 0.5rem 1.25rem;
   color: var(--fg);
   font-style: italic;
   font-size: 1.15rem;
   font-family: var(--serif);
-  background: color-mix(in srgb, var(--quote-border) 4%, transparent);
-  border-radius: 0 4px 4px 0;
+  background: transparent;
 }
 .prose blockquote p:last-child {
   margin-bottom: 0;
