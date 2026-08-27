@@ -508,8 +508,7 @@ html.dark-mode .site-nav__toggle .icon-moon { display: inline-block; }
   }
 }
 
-.prose .caption,
-.prose p:has(img) + p:has(> em:only-child) {
+.prose .caption {
   display: block;
   text-align: center;
   font-family: var(--sans);
@@ -520,8 +519,7 @@ html.dark-mode .site-nav__toggle .icon-moon { display: inline-block; }
   line-height: 1.5;
 }
 /* If they wrap the caption in italics, let's keep it italicized for a better look */
-.prose .caption em,
-.prose p:has(img) + p:has(> em:only-child) em {
+.prose .caption em {
   font-style: italic;
 }
 
