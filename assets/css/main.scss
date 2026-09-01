@@ -485,7 +485,7 @@ html.dark-mode .site-nav__toggle .icon-moon { display: inline-block; }
 }
 .prose li { line-height: 1.75; }
 
-.prose blockquote {
+.prose blockquote:not(.callout) {
   border-left: 4px solid #c5030c;
   margin: 1.8em 0;
   padding: 0.5rem 1.25rem;
@@ -495,7 +495,7 @@ html.dark-mode .site-nav__toggle .icon-moon { display: inline-block; }
   font-family: var(--serif);
   background: transparent;
 }
-.prose blockquote p:last-child {
+.prose blockquote:not(.callout) p:last-child {
   margin-bottom: 0;
 }
 
