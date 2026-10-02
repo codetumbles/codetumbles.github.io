@@ -485,6 +485,15 @@ html.dark-mode .site-nav__toggle .icon-moon { display: inline-block; }
 }
 .prose li { line-height: 1.75; }
 
+.prose mjx-container[display="true"],
+.prose .katex-display {
+  margin: 1.8em 0 !important;
+  padding: 0.2rem 0;
+  font-size: 1.08em;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
 .prose blockquote:not(.callout) {
   border-left: 4px solid #c5030c;
   margin: 1.8em 0;
