@@ -3,7 +3,7 @@ title: "War on Registers: GPU Metamorphosis"
 date: 2026-08-23
 tags: [hardware, machine-learning, nvidia, gpu, architecture, optimization, flash-attention]
 toc: true
-toc_levels: 2..2
+toc_levels: 2..3
 ---
 
 It’s a common fallacy to run the same algorithm on a new generation of GPUs and expect the massive performance gains marketed on the spec sheet. To understand what actually drives those raw TFLOP numbers, we need to look at how NVIDIA GPUs evolved from Ampere to Hopper to Blackwell. Even better, we can use FlashAttention as a case study to see exactly why we’ve been forced to rewrite our software for each new architecture.
