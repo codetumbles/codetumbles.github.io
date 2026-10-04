@@ -3,7 +3,7 @@ title: "War on Registers: GPU Metamorphosis"
 date: 2026-08-23
 tags: [hardware, machine-learning, nvidia, gpu, architecture, optimization, flash-attention]
 toc: true
-toc_levels: 2..3
+toc_levels: 2..2
 ---
 
 It’s a common fallacy to run the same algorithm on a new generation of GPUs and expect the massive performance gains marketed on the spec sheet. To understand what actually drives those raw TFLOP numbers, we need to look at how NVIDIA GPUs evolved from Ampere to Hopper to Blackwell. Even better, we can use FlashAttention as a case study to see exactly why we’ve been forced to rewrite our software for each new architecture.
@@ -17,10 +17,10 @@ $$ \text{Arithmetic Intensity} = \frac{\text{Total FLOPs (Compute)}}{\text{Total
 During the prefill stage, while processing long prompts, the workload is typically compute-bound, demanding massive Matrix Multiply-Accumulate (**MMA**) throughput from the Tensor Cores. But during the decode stage, the workload flips. Generating tokens one by one is almost entirely memory-bandwidth-bound, bottlenecked by the speed at which we can fetch weights and the KV-cache from HBM.
 
 ![Performance Roofline Analysis: Decode vs Prefill](/assets/images/writing/gpu-metamorphosis/roofline-analysis.png)
-*[Roofline model](https://modal.com/gpu-glossary/perf/roofline-model) showing decode on the memory-bound ramp and prefill on the compute-bound plateau.*
+*Roofline model* showing decode on the memory-bound ramp and prefill on the compute-bound plateau.*
 {: .caption }
 
-To optimize attention and break through these bottlenecks, we fuse GEMM operations, softmax, and memory movement. But every time NVIDIA releases a new architecture, the underlying hardware constraints shift. Older implementations become suboptimal, or worse, target the wrong instruction path entirely. **FlashAttention-2**, which was optimized for Ampere, achieved only *~35%* utilization on Hopper. [**FlashAttention-3**](https://tridao.me/blog/2024/flash3/) fixed that, hitting *~75%*. But FlashAttention-3 style Hopper kernels are not forward-compatible with Blackwell's SM100 path, because Blackwell replaces Hopper's `wgmma` MMA path with `tcgen05.mma` (**UMMA**).
+To optimize attention and break through these bottlenecks, we fuse GEMM operations, softmax, and memory movement. But every time NVIDIA releases a new architecture, the underlying hardware constraints shift. Older implementations become suboptimal, or worse, target the wrong instruction path entirely. **FlashAttention-2**, which was optimized for Ampere, achieved only *~35%* utilization on Hopper. **FlashAttention-3** fixed that, hitting *~75%*. But FlashAttention-3 style Hopper kernels are not forward-compatible with Blackwell's SM100 path, because Blackwell replaces Hopper's `wgmma` MMA path with `tcgen05.mma` (**UMMA**).
 
 So the question becomes: why does the code have to change so drastically, to the point that algorithms built for the last generation are no longer compatible with the next one? (*Shouldn't backward compatibility be fundamental feature?!*) The reasons lie in the fact that from the **A100** to the **H100**, and then to the **B200**, the architectural leaps weren't just about throwing more compute at the problem. They were part of a systematic, multi-generation campaign to move MMA workloads out of the thread registers and into dedicated hardware.
 
@@ -117,12 +117,12 @@ __global__ void preampere_copy(half const* gmem) {
 
 ### Ampere Async Data Loading
 
-Ampere (A100) solved this by introducing the `cp.async` instruction (SASS: `LDGSTS`). Instead of forcing threads to manually carry data, `cp.async` acts as a non-blocking memory transfer. A thread simply issues the command, and the SM's Load/Store Unit (LSU) takes over, moving the upcoming [tile](https://salykova.github.io/sgemm-gpu) of data from Global Memory into Shared Memory without staging it through thread registers.
+Ampere (A100) solved this by introducing the `cp.async` instruction (SASS: `LDGSTS`). Instead of forcing threads to manually carry data, `cp.async` acts as a non-blocking memory transfer. A thread simply issues the command, and the SM's Load/Store Unit (LSU) takes over, moving the upcoming tile of data from Global Memory into Shared Memory without staging it through thread registers.
 
 This unlocked two massive improvements. First, the data bypasses the register file on the load path, instantly alleviating *register pressure*; the exact cache behavior depends on the instruction form and cache policy. Second, because the transfer happens asynchronously, it makes a software pipeline possible: threads can actively crunch math on Tile A while the LSU fetches Tile B in the background, hiding HBM latency by overlapping data load and compute.
 
 ![Ampere Software Pipeline: cp.async overlap](/assets/images/writing/gpu-metamorphosis/ampere_overlap.png)
-*GEMM mainloop: one HBM fetch (yellow) feeds many shared-memory fragment loads (green) and MMA ops (blue) within a single mainloop iteration. `cp.async` overlaps the next iteration's fetch with the current iteration's compute, hiding ~400 cycles of HBM latency behind `__syncthreads()`. (Diagram: [CUTLASS efficient GEMM docs](https://github.com/MegEngine/cutlass-bak/blob/master/media/docs/efficient_gemm.md).)*
+*GEMM mainloop: one HBM fetch (yellow) feeds many shared-memory fragment loads (green) and MMA ops (blue) within a single mainloop iteration. `cp.async` overlaps the next iteration's fetch with the current iteration's compute, hiding ~400 cycles of HBM latency behind `__syncthreads()`.*
 {: .caption }
 
 The CUDA API that implements this pattern uses `cuda::pipeline` to track in-flight stages:
@@ -195,7 +195,7 @@ While `cp.async` overlapped memory loads with compute to hide latency in Ampere,
 
 Every thread had to manually calculate multi-dimensional pointer arithmetic to figure out exactly where the next tile of data lived. If you wanted to avoid Shared Memory bank conflicts, your threads had to execute manual bitwise XOR operations on the addresses ([swizzling](https://lubits.ch/flash/Part-4)) before writing the data. This explicit address math devoured compute cycles and tied up the very registers we were trying to save.
 
-Hopper came up with [Tensor Memory Accelerator (TMA)](https://pytorch.org/blog/hopper-tma-unit/), a dedicated hardware unit designed to take over data movement as an answer to this problem. 
+Hopper came up with Tensor Memory Accelerator (TMA), a dedicated hardware unit designed to take over data movement as an answer to this problem. 
 
 Instead of forcing the GPU threads to calculate pointer offsets, the workflow shifts toward descriptor-driven traversal. Host-side APIs can create a 128-byte descriptor, a *Tensor Map*, that defines the tensor's shape, strides, boundaries, and swizzle pattern. When the kernel runs, a single thread simply issues a `cp.async.bulk.tensor` command pointing to the Tensor Map, and the TMA hardware takes over. It asynchronously fetches an entire tile from HBM into shared memory, handling multidimensional traversal, bounds behavior, and swizzling without making every worker thread spend registers and instructions on that address math. 
 
@@ -231,7 +231,7 @@ Hopper fixes this with Thread Block Clusters: up to 8 CTAs in a portable cluster
 
 With TMA handling the data movement from global to shared memory, one major register bottleneck was solved. But if we look back at the Ampere baseline, the Tensor Cores still had a voracious appetite for registers during the actual math phase. The older `mma.sync` instructions forced threads to load operands from shared memory into their registers (`ldmatrix`) before they could actually multiply them.
 
-To evict these operands from the register file, Hopper introduced [WGMMA](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#asynchronous-warpgroup-level-matrix-instructions) (Warp Group MMA). Instead of a 32-thread warp performing synchronous math from its own registers, a 128-thread warp group issues an asynchronous matrix multiply that pulls its operands *directly* from shared memory. By bypassing the register file entirely on the input side, WGMMA freed up even more space.
+To evict these operands from the register file, Hopper introduced **WGMMA** (Warp Group MMA). Instead of a 32-thread warp performing synchronous math from its own registers, a 128-thread warp group issues an asynchronous matrix multiply that pulls its operands *directly* from shared memory. By bypassing the register file entirely on the input side, WGMMA freed up even more space.
 
 ![Hopper Warp Groups and Clusters](/assets/images/writing/gpu-metamorphosis/hopper_wgmma.png)
 *Ampere (left) relies on independent thread blocks. Hopper (right) introduces Thread Block Clusters and organizes threads into larger, 128-thread Warp Groups, which act as the fundamental execution unit for the new WGMMA instructions.*
@@ -370,7 +370,7 @@ Each generation has systematically eliminated a different source of register pre
 
 But across both generations, the final math accumulators remained in the threads' private registers. This forced the ping-pong scheduling we saw in Hopper, as threads had to constantly halt their math to spill those registers to memory during the epilogue.
 
-Blackwell completely severs this final dependency by introducing the architecture's defining feature: [Tensor Memory (TMEM)](https://mlc.ai/modern-gpu-programming-for-mlsys/chapter_tmem/index.html). The [FlashAttention-4 paper](https://arxiv.org/html/2603.05451) is a useful reference for how TMEM, UMMA, and asymmetric pipelines show up in real Blackwell attention kernels.
+Blackwell completely severs this final dependency by introducing the architecture's defining feature: Tensor Memory (**TMEM**). The FlashAttention-4 paper is a useful reference for how TMEM, UMMA, and asymmetric pipelines show up in real Blackwell attention kernels.
 
 TMEM is a dedicated **256 KB** on-chip scratchpad per SM (64 KB per processing block × 4). It is an entirely new physical memory space, completely separate from both thread registers and Shared Memory. While the 256 KB pool is shared across the SM, the hardware dynamically partitions it among the active thread blocks. Kernels explicitly allocate and later release TMEM, and once assigned, a partition is strictly scoped to its CTA, with threads accessing only the accumulators belonging to their own Thread Block.
 
@@ -594,3 +594,34 @@ FlashAttention shows exactly how tightly algorithm and architecture are now coup
 - **FA-4 (Blackwell, TMEM Era):** Accumulators move out of the register file into TMEM via UMMA. Written in CuTe, with a three-stage pipeline (Load → Compute → Softmax) that keeps every unit busy and pushes B200 past 1,600 TFLOPs.
 
 As modern accelerators move data around the chip to avoid register bottlenecks, our code has to follow it. NVIDIA is just the most prominent example. AMD's Matrix Cores, Google's TPUs, Intel's Gaudi, and SRAM-first chips like Groq and Cerebras all follow the same pattern of pulling the accumulator off the register file and onto dedicated units like TMEM. You can sometimes take an old kernel and make it run on new hardware, but you won't get the advertised performance. The hardware is there, but to actually use it, you have to write code that maps closely to the physical architecture.
+
+***
+
+## References & Further Reading
+
+### Academic Papers & Architecture
+*   **FlashAttention Series:** 
+    *   [FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness](https://arxiv.org/abs/2205.14135) (The baseline Memory Wall problem).
+    *   [FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning](https://arxiv.org/abs/2307.08691) (Ampere optimization).
+    *   [FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision](https://tridao.me/blog/2024/flash3/) (Hopper TMA & WGMMA).
+    *   [FlashAttention-4: Hardware-Aware Attention for Blackwell](https://arxiv.org/html/2603.05451) (Blackwell TMEM & UMMA).
+*   **Hopper Architecture Deep Dive:** [NVIDIA Hopper Architecture In-Depth](https://developer.nvidia.com/blog/nvidia-hopper-architecture-in-depth/).
+*   **Blackwell Architecture Deep Dive:** [SemiAnalysis: Dissecting Nvidia Blackwell - Tensor Cores, PTX Instructions, and SASS](https://newsletter.semianalysis.com/p/dissecting-nvidia-blackwell-tensor).
+*   **Blackwell Microbenchmarking:** [Microbenchmarking NVIDIA’s Blackwell Architecture: An in-depth Architectural Analysis](https://arxiv.org/abs/2512.02189).
+
+### CUDA, PTX, and Kernel Optimization
+*   **GEMM Optimization Ladder:** Simon Boehm's classic [How to Optimize a CUDA Matmul Kernel for cuBLAS-like Performance](https://siboehm.com/articles/22/CUDA-MMM).
+*   **Hopper TMA Tutorial:** [Colfax Research: Mastering the NVIDIA Tensor Memory Accelerator (TMA)](https://research.colfax-intl.com/tutorial-hopper-tma/).
+*   **Blackwell TMEM Tutorial:** [Colfax Research: Writing GEMM Kernels Using Tensor Memory For NVIDIA Blackwell GPUs](https://research.colfax-intl.com/cutlass-tutorial-writing-gemm-kernels-using-tensor-memory-for-nvidia-blackwell-gpus/).
+*   **Blackwell SM100 GEMMs:** [CUTLASS Documentation: Blackwell SM100 GEMMs](https://docs.nvidia.com/cutlass/latest/media/docs/cpp/blackwell_functionality.html).
+*   **Blackwell TMEM:** [Modern GPU Programming for ML Systems: Tensor Memory (TMEM)](https://mlc.ai/modern-gpu-programming-for-mlsys/chapter_tmem/index.html).
+*   **Shared Memory Swizzling:** [FlashAttention Part 4: Shared Memory Bank Conflicts](https://lubits.ch/flash/Part-4).
+
+### Concepts & Workarounds
+*   **Roofline Model:** [Modal GPU Glossary: Roofline Model](https://modal.com/gpu-glossary/perf/roofline-model).
+*   **DeepSeek MLA & Seesaw Scheduling:** [DeepSeek FlashMLA Kernel Deep Dive](https://github.com/deepseek-ai/FlashMLA/blob/main/docs/20250422-new-kernel-deep-dive.md).
+*   **Ampere Structured Sparsity:** [Exploiting Ampere Structured Sparsity with cuSPARSELt](https://developer.nvidia.com/blog/exploiting-ampere-structured-sparsity-with-cusparselt/).
+*   **Hadamard Transform:** [Discrete Walsh-Hadamard Transform](https://la.mathworks.com/help/signal/ug/discrete-walsh-hadamard-transform.html).
+
+### Communities
+*   **GPU MODE:** An excellent community for GPU programming. Check out their [Discord](https://discord.gg/gpumode) and [Lectures](https://github.com/gpu-mode/lectures).
