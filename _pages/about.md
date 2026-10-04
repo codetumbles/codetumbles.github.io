@@ -6,7 +6,7 @@ permalink: /about/
 
 Hi, I'm Usman Akram.
 
-I'm a Machine Learning Engineer at **Rakuten**, where I work on the systems behind
+I'm a Machine Learning Engineer at **Rakuten**, Japan's largest e-commerce company, where I work on the systems behind
 foundation language models. Most of my work these days is inference
 optimization, distributed training, and the messy parts underneath. Before LLMs,
 I worked on ad recommendation, and before that, I led teams building scalable
