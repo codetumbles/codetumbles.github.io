@@ -761,9 +761,12 @@ html.dark-mode .prose table tbody tr:nth-child(even) {
   font-size: 0.75rem;
   margin: 0 0 0.6rem;
 }
-.toc-sidebar ul { list-style: none; padding-left: 0.8rem; margin: 0; border-left: 1px solid var(--border); }
-.toc-sidebar li { margin: 0.2rem 0; }
-.toc-sidebar a {
+nav[id^="toc-"] ul, nav[id^="toc-"] ol { list-style: none; padding-left: 0.8rem; margin: 0; }
+nav[id^="toc-"] > ul, nav[id^="toc-"] > ol { padding-left: 0; }
+nav[id^="toc-"] li { margin: 0.2rem 0; }
+nav[id^="toc-"] li > ul, nav[id^="toc-"] li > ol { display: none; }
+nav[id^="toc-"] li.is-active-li > ul, nav[id^="toc-"] li.is-active-li > ol { display: block; }
+nav[id^="toc-"] a {
   color: var(--fg-muted);
   text-decoration: none;
   display: block;
@@ -772,7 +775,7 @@ html.dark-mode .prose table tbody tr:nth-child(even) {
   margin-left: -0.8rem;
   padding-left: 0.6rem;
 }
-.toc-sidebar a.is-active {
+nav[id^="toc-"] a.is-active {
   color: var(--fg);
   border-left-color: var(--accent);
 }

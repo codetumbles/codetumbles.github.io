@@ -599,7 +599,7 @@ As modern accelerators move data around the chip to avoid register bottlenecks, 
 
 ## References & Further Reading
 
-### Academic Papers & Architecture
+#### Academic Papers & Architecture
 *   **FlashAttention Series:** 
     *   [FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness](https://arxiv.org/abs/2205.14135) (The baseline Memory Wall problem).
     *   [FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning](https://arxiv.org/abs/2307.08691) (Ampere optimization).
@@ -609,7 +609,7 @@ As modern accelerators move data around the chip to avoid register bottlenecks, 
 *   **Blackwell Architecture Deep Dive:** [SemiAnalysis: Dissecting Nvidia Blackwell - Tensor Cores, PTX Instructions, and SASS](https://newsletter.semianalysis.com/p/dissecting-nvidia-blackwell-tensor).
 *   **Blackwell Microbenchmarking:** [Microbenchmarking NVIDIA’s Blackwell Architecture: An in-depth Architectural Analysis](https://arxiv.org/abs/2512.02189).
 
-### CUDA, PTX, and Kernel Optimization
+#### CUDA, PTX, and Kernel Optimization
 *   **GEMM Optimization Ladder:** Simon Boehm's classic [How to Optimize a CUDA Matmul Kernel for cuBLAS-like Performance](https://siboehm.com/articles/22/CUDA-MMM).
 *   **Hopper TMA Tutorial:** [Colfax Research: Mastering the NVIDIA Tensor Memory Accelerator (TMA)](https://research.colfax-intl.com/tutorial-hopper-tma/).
 *   **Blackwell TMEM Tutorial:** [Colfax Research: Writing GEMM Kernels Using Tensor Memory For NVIDIA Blackwell GPUs](https://research.colfax-intl.com/cutlass-tutorial-writing-gemm-kernels-using-tensor-memory-for-nvidia-blackwell-gpus/).
@@ -617,11 +617,11 @@ As modern accelerators move data around the chip to avoid register bottlenecks, 
 *   **Blackwell TMEM:** [Modern GPU Programming for ML Systems: Tensor Memory (TMEM)](https://mlc.ai/modern-gpu-programming-for-mlsys/chapter_tmem/index.html).
 *   **Shared Memory Swizzling:** [FlashAttention Part 4: Shared Memory Bank Conflicts](https://lubits.ch/flash/Part-4).
 
-### Concepts & Workarounds
+#### Concepts & Workarounds
 *   **Roofline Model:** [Modal GPU Glossary: Roofline Model](https://modal.com/gpu-glossary/perf/roofline-model).
 *   **DeepSeek MLA & Seesaw Scheduling:** [DeepSeek FlashMLA Kernel Deep Dive](https://github.com/deepseek-ai/FlashMLA/blob/main/docs/20250422-new-kernel-deep-dive.md).
 *   **Ampere Structured Sparsity:** [Exploiting Ampere Structured Sparsity with cuSPARSELt](https://developer.nvidia.com/blog/exploiting-ampere-structured-sparsity-with-cusparselt/).
 *   **Hadamard Transform:** [Discrete Walsh-Hadamard Transform](https://la.mathworks.com/help/signal/ug/discrete-walsh-hadamard-transform.html).
 
-### Communities
+#### Communities
 *   **GPU MODE:** An excellent community for GPU programming. Check out their [Discord](https://discord.gg/gpumode) and [Lectures](https://github.com/gpu-mode/lectures).

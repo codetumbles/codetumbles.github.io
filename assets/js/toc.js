@@ -108,6 +108,11 @@
     });
 
     allLinks.forEach(function (a) { a.classList.remove('is-active'); });
+    navs.forEach(function (nav) {
+      Array.prototype.slice.call(nav.querySelectorAll('li.is-active-li')).forEach(function (li) {
+        li.classList.remove('is-active-li');
+      });
+    });
 
     var activeId = null;
     for (var i = 0; i < headings.length; i++) {
@@ -123,7 +128,16 @@
       }
     }
     if (activeId && linksByTarget[activeId]) {
-      linksByTarget[activeId].forEach(function (a) { a.classList.add('is-active'); });
+      linksByTarget[activeId].forEach(function (a) {
+        a.classList.add('is-active');
+        var el = a.parentElement;
+        while (el && el.tagName && el.tagName.toLowerCase() !== 'nav') {
+          if (el.tagName.toLowerCase() === 'li') {
+            el.classList.add('is-active-li');
+          }
+          el = el.parentElement;
+        }
+      });
     }
   }, { rootMargin: '-80px 0px -70% 0px', threshold: 0 });
 
