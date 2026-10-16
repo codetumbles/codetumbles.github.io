@@ -28,7 +28,7 @@ request -> model forward -> sampled token -> update request
 
 That's a useful mental model for local development. But it's not how a high-throughput serving engine operates. To keep the GPU busy, the engine has to juggle requests arriving at different times, prompts of varying lengths, unpredictable output lengths, and fluctuating memory pressure. 
 
-V1 isn't built around the concept of "a request going through a model." It's built around **the token work that can be scheduled *right now*.** We'll come back to what that means in Bottleneck 4.
+V1 isn't built around the concept of "a request going through a model." It's built around the idea of *what tokens are ready to be computed on the next step*. We'll come back to what that means in Bottleneck 4.
 
 ![vLLM V1 architecture request flow showing LLM Processor, Engine Core, KV Cache Manager, and Model Runner]({{ "/assets/images/writing/vllm-evolution/v1-request-flow.png" | relative_url }})
 *The vLLM V1 architecture breaks the serving loop into distinct, highly optimized components. The **LLM Processor** handles incoming requests and metadata; the **Engine Core** manages queues and scheduling; the **KV Cache Manager** allocates physical memory; and the **Model Runner** flattens inputs, executes the model, and samples tokens.*
@@ -87,7 +87,7 @@ Physical blocks: [42, 7, 91]
 
 It's conceptually identical to virtual memory in operating systems, with one caveat: it's not handled transparently by the hardware. The attention kernel explicitly uses block tables to locate the scattered KV cache blocks. 
 
-This indirection adds overhead, but it's a wildly successful tradeoff. By eliminating fragmentation, the engine can fit vastly more requests into memory, pushing throughput through the roof.
+By eliminating fragmentation, the engine can fit vastly more requests into memory, pushing throughput through the roof.
 
 Once memory is no longer the bottleneck, we can keep more requests alive. This exposes the next problem.
 
@@ -134,7 +134,9 @@ Flattening alone is not enough. If we ran standard causal attention on this conc
 
 Why does this matter? Looking back at the padding diagram: we padded a 5-token prompt up to 7 just to match its neighbor. Those extra slots cost *memory* and *compute* even though the model never uses them. Flattening removes that waste as you only carry the tokens each request actually needs.
 
-The block-diagonal mask saves compute in a different way. Attention compares every query token against every key token. On the full flattened buffer, that would mean one giant interaction matrix spanning all requests. But most of those interactions are meaningless i.e. Prompt 0 should never attend to Prompt 1. Ragged batching restricts each request to its own smaller causal triangle along the diagonal. A 5-token request only computes attention within a 5×5 block; a 7-token request stays within 7×7, not a single 12×12 matrix spanning the whole batch. Specialized kernels (using metadata like `query_start_loc` or `cu_seqlens`) compute only within those per-request blocks, rather than building the full matrix and masking out the irrelevant regions afterward.
+The block-diagonal mask saves compute in a different way. On the full flattened buffer, that would be one giant 12×12 interaction matrix spanning all requests, with most entries meaningless (Prompt 0 should never attend to Prompt 1). The block-diagonal mask restricts each request to its own smaller causal triangle i.e. a 5×5 for Prompt 0, and a 7×7 for Prompt 1 instead of the full 12×12.
+
+Specialized kernels take this one step further. Using metadata like `query_start_loc` or `cu_seqlens`, they compute only within those per-request blocks rather than building the full matrix and masking out the irrelevant regions afterward.
 
 Metadata tells the attention kernel where each sequence boundary falls. Non-attention layers simply process the full 1D array; attention layers use the mask and metadata to enforce per-request isolation.
 
@@ -142,7 +144,7 @@ Metadata tells the attention kernel where each sequence boundary falls. Non-atte
 
 Flattening and ragged batching solve the padding waste, but they do not solve the scheduling problem.
 
-### The Waiting Problem: Iterative-Level Scheduling
+### Scheduling at the Iteration Boundary
 
 Even without padding, dynamic batching still treats a batch as a unit of work. The batch is only "done" when the *longest* request finishes. A request that needed 5 tokens gets trapped in the GPU, waiting for a 500-token request to complete. This wastes compute and spikes latency.
 
@@ -163,19 +165,12 @@ There is a second constraint beyond scheduling fairness: **memory**. The activat
 To see why, start with the KV cache. Every token the model has already seen needs a Key and a Value vector stored at each layer:
 
 ```text
-KV memory per token = 2 × layers × kv_heads × head_dim × bytes_per_element
+KV per token (Llama 3.1 8B, FP16)
+  = 2 × 32 layers × 8 KV heads × 128 head_dim × 2 bytes
+  ≈ 128 KiB
 ```
 
-For **Llama 3.1 8B** (32 layers, 8 KV heads via GQA, 128-dim heads, FP16):
-
-```text
-2 × 32 × 8 × 128 × 2 bytes = 131,072 bytes ≈ 128 KiB per token
-```
-
-
-Scale that to a long prompt and the numbers add up fast. A 32K-token context needs ~4 GB of KV before generation even starts. At 128K tokens, KV alone is ~16 GB. And that is just the cache. Prefill also allocates activations that grow with sequence length, so a single forward pass over tens of thousands of tokens can exceed what is left on the card.
-
-On a single **H100 (80 GB)** running Llama 3.1 8B at `gpu_memory_utilization=0.9`, model weights take roughly 16 GB in FP16, leaving about 56 GB for KV cache, activations, and runtime buffers across all concurrent requests. A code repository pasted alongside an instruction can blow past that budget quickly, especially while other users are already in flight. vLLM also caps how many tokens any one iteration may process (`max_num_batched_tokens`, often in the low thousands). Even if we wanted to prefill it all at once, we often cannot.
+At book length (~128K tokens, roughly a full novel), KV alone is ~16 GB. On an 80 GB H100 with weights taking ~16 GB and `gpu_memory_utilization=0.9`, a single long prefill can easily exceed what's left after the other in-flight requests. Prefill also allocates activations that grow with sequence length, and vLLM caps how many tokens any one iteration may process (`max_num_batched_tokens`, often in the low thousands). Even if we wanted to prefill it all at once, we often cannot.
 
 **Chunked prefill** solves this by splitting a long prompt into smaller pieces and processing them across multiple iterations. Instead of scheduling all 5000 tokens at once, the scheduler might allocate 512 tokens this iteration, then interleave the remaining prefill with ongoing decode work in subsequent iterations. This prevents a single long prompt from blocking the entire batch.
 
@@ -191,15 +186,15 @@ Chunked prefill solves both problems at once: it caps per-iteration memory use a
 
 Chunked prefill lets prefill and decode share an iteration. That creates a new execution problem: the batch is no longer a neat `[batch_size, seq_len, hidden_dim]` tensor. One request may contribute 512 prefill tokens, another just 1 decode token. You cannot stack these into a uniform 3D batch the way static serving expects.
 
-Standard GPU batching leans on batched matrix multiply (`torch.bmm`). The idea is to stack one tensor per request and run a single kernel over the whole stack. That only works when every slice has the same shape. If four requests contribute 1, 1, 2, and 3 tokens this iteration, you have four matrices with different row counts. `torch.bmm` expects them to line up as `[b, m, k]` times `[b, k, n]`, with the same `m` for every request. The only way to force a match is padding the shorter requests up to the longest, which brings back the waste we were trying to avoid.
+Standard GPU batching leans on batched matrix multiply (`torch.bmm`): stack one tensor per request and run a single kernel over the batch. That only works when every slice has the same shape. If four requests contribute 1, 1, 2, and 3 tokens this step, the only way to make them line up is padding, which brings back the waste we were trying to avoid.
 
 ![Selective batching: prefill vs decode tensor shapes for attention and non-attention layers]({{ "/assets/images/writing/vllm-evolution/selective-batching-prefill-decode.png" | relative_url }})
-*(Prefill) Requests X1, X2, X3, and X4 contribute 1, 1, 2, and 3 tokens. Non-attention layers flatten all 7 tokens into `[D, 7, H]` (**D**: hidden size, **H**: No. of heads), but attention cannot form a uniform `[4, D, m, H]` tensor because `m` differs per request. (Decode) Every request contributes exactly 1 token, so both paths align on a batch dimension of 4.*
+*(Prefill) Requests X1–X4 contribute 1, 1, 2, and 3 tokens (7 total). Non-attention layers flatten all 7 into one buffer ([D, 7, H] in the diagram; equivalently [7, D] in token-major layout). Attention needs a per-request batch dimension and cannot form a uniform [4, D, m, H] tensor because m differs (red ?). (Decode) Each request adds exactly 1 token, so non-attention sees [D, 4, H] and attention lines up as [4, D, 1, H].*
 {: .caption }
 
 The diagram hints at an asymmetry. On the **prefill** side, non-attention layers already know how to flatten all 7 tokens, but attention stalls on the red `?`. On the **decode** side, every request contributes exactly one token, so both paths line up. The underlying issue is the same: a transformer block does not treat every operation the same.
 
-**Non-attention layers** (projections, layer norm, GeLU, FFN/MoE) are the easy case in both panels. The underlying principle is **token-wise independence**: each token is mapped through the same weights without reading from any other token. A linear layer computes `output[i] = input[i] × W` for every row `i`. In the prefill panel, stack all 7 rows into `[7, H]` and one matmul handles the iteration. In the decode panel, stack 4 rows into `[4, H]`. The layer does not care which request each row came from.
+**Non-attention layers** (projections, layer norm, GeLU, FFN/MoE) are the easy case in both panels. Because of **token-wise independence**, each token is mapped through the same weights without reading from any other token. A linear layer computes `output[i] = input[i] × W` for every row `i`. In the prefill panel, stack all 7 rows into `[7, D]` and one matmul handles the iteration. In the decode panel, stack 4 rows into `[4, D]`. The layer does not care which request each row came from.
 
 **Attention** is where the prefill panel breaks. Each token's output depends on *which other tokens it is allowed to see*, and that set is defined per request:
 
@@ -217,18 +212,18 @@ Four different `m` values (1, 1, 2, 3), so attention cannot form a uniform `[4, 
 **Selective batching**, from the Orca paper, comes with a practical compromise: run linear layers on one flattened batch, split attention per request, then merge the results back. The diagram below walks through the **prefill** case, with $X_1$, $X_2$, $X_3$, and $X_4$ contributing 1, 1, 2, and 3 tokens.
 
 ![Orca selective batching: batched linear execution, attention splitting, and merge]({{ "/assets/images/writing/vllm-evolution/selective-batching-orca-mechanism.png" | relative_url }})
-*All 7 tokens flatten to `[7, H]`, pass through QKV linear together, split for per-request attention (with KV history from the Attention K/V Manager), then merge back for the output projection.*
+*All 7 tokens flatten to `[7, D]`, pass through QKV linear together, split for per-request attention (with KV history from the Attention K/V Manager), then merge back for the output projection.*
 {: .caption }
 
-1. **Batched linear execution.** All 7 tokens flatten to `[7, H]` and enter QKV projection `[7, 3H]` in one shot, exactly as the prefill panel shows for non-attention layers.
+1. **Batched linear execution.** All 7 tokens flatten to `[7, D]` and enter QKV projection `[7, 3D]` in one shot, exactly as the prefill panel shows for non-attention layers.
 
-2. **Attention splitting.** The unified `[7, 3H]` output splits back into `[1, 3H]`, `[1, 3H]`, `[2, 3H]`, and `[3, 3H]` for $X_1$ through $X_4$. Each slice is paired with that request's KV history from the cache manager before attention runs.
+2. **Attention splitting.** The unified `[7, 3D]` output splits back into `[1, 3D]`, `[1, 3D]`, `[2, 3D]`, and `[3, 3D]` for $X_1$ through $X_4$. Each slice is paired with that request's KV history from the cache manager before attention runs.
 
-3. **Custom kernel fusion.** Running attention sequentially per request would leave the GPU underutilized. Modern engines feed each split into specialized kernels (FlashAttention, FlashInfer, PagedAttention) that fuse the attention math and handle irregular shapes efficiently, then merge the outputs back into `[7, H]` for the next linear layer.
+3. **Custom kernel fusion.** Running attention sequentially per request would leave the GPU underutilized. Modern engines feed each split into specialized kernels (FlashAttention, FlashInfer, PagedAttention) that fuse the attention math and handle irregular shapes efficiently, then merge the outputs back into `[7, D]` for the next linear layer.
 
 ### Continuous Batching: The Full Picture
 
-None of these techniques alone is "continuous batching." It is the emergent behavior when they all work together:
+Continuous batching is a combination of all these techniques run together:
 
 - **Flattening and ragged batching** eliminate padding waste and isolate each request via block-diagonal attention masks.
 - **Iterative scheduling** backfills finished slots immediately.
@@ -325,7 +320,7 @@ That is why V0's separate branches disappear. The shift is in what the scheduler
 
 Take **chunked prefill**, for instance. In V0, a request stuck mid-prompt was a problem for the state machine: not waiting, not fully prefilled, not yet decoding. The scheduler needed extra rules to handle that case. In V1, there is no in-between case. A request with 12 prompt tokens and 2 computed simply has a gap of 10. The scheduler assigns 2 this step because the budget ran out, not because it recognized *chunked prefill mode*.
 
-**Prefix caching** works in similar way. In V0, the scheduler had to branch: check the cache, then rewrite its block-allocation logic to skip *cached* tokens. In V1, a cache hit advances `num_computed_tokens` before scheduling begins. The scheduler never learns that caching happened. It just sees a smaller gap and schedules fewer tokens.
+**Prefix caching** works in similar way. In V0, the scheduler had to branch: check the cache, then rewrite its block-allocation logic to skip *cached* tokens. In V1, a cache hit sets num_computed_tokens to the length of the matched prefix before scheduling begins, as if those tokens were already prefilled. This way, the scheduler just sees a smaller gap and schedules fewer tokens, and it doesn't need to know caching happened.
 
 **Speculative decoding** was the messiest collision. V0 ran two schedulers in practice: the normal single-token path and a separate speculative loop for draft-and-verify. Both fought over the same KV cache blocks. Block allocations became fragile, and rejected draft tokens needed rollback logic to undo. In V1, draft tokens are just part of `num_tokens_with_spec`. The scheduler sees more work in the gap and schedules it. Verification happens in the model runner, not in the scheduler's branching logic.
 
@@ -350,7 +345,7 @@ Reordering was not a rare edge case. It happened whenever a request finished and
 
 Each event triggered Python-side tensor shuffling. Worse, V1 often needed a redundant backup copy (`CachedRequestState`) for requests that were still live but not scheduled this step, because rows in the persistent tensors could be overwritten while those requests were still active. Two sources of truth, updated every iteration.
 
-For a plain transformer, PagedAttention mostly shields you: KV cache follows the request through block tables regardless of batch position. Hybrid and recurrent models are less forgiving. They carry extra state (convolution buffers, SSM activations) that model code often indexes by batch slot. Request A finishes, request B lands in the same row, and B can inherit A's state. That bug only surfaces under concurrent load, which is exactly when serving engines are supposed to shine.
+For a plain transformer, PagedAttention mostly shields you: KV cache follows the request through block tables regardless of batch position. But hybrid and recurrent models are less forgiving. They carry extra state (convolution buffers, SSM activations) that model code often indexes by batch slot. Request A finishes, request B lands in the same row, and B can inherit A's state. That bug only surfaces under concurrent load.
 
 ### MRV2: stable rows, gather, and GPU-native prep
 
@@ -361,19 +356,19 @@ The central fix is separating *persistent state* from the *per-step execution vi
 Persistent state might look like this:
 
 ```text
-row 0: req_A
+# row 0: req_A (decode)
   num_computed_tokens = 10
   last_sampled_token = 501
   block_table = [7, 8]
   sampling.temperature = 0.7
 
-row 1: req_B
+# row 1: req_B (decode)
   num_computed_tokens = 20
   last_sampled_token = 812
   block_table = [3, 4, 5]
   sampling.temperature = 1.0
 
-row 2: req_C
+# row 2: req_C (prefill)
   num_computed_tokens = 0
   next_prefill_tokens = [101, 102, 103, 104]
   block_table = [9]
@@ -401,19 +396,19 @@ batch row 2 → persistent row 2 (req_C)
 A gather step assembles the dense per-step tensors the model actually sees:
 
 ```text
-input_ids       = [812, 501, 101, 102, 103, 104]
+input_ids       = [812, 501, 101, 102, 103, 104]   # req_B, req_A, req_C
 positions       = [20, 10, 0, 1, 2, 3]
 query_start_loc = [0, 1, 2, 6]
-seq_lens        = [21, 11, 4]
+seq_lens        = [21, 11, 4]                      # req_B, req_A, req_C
 
 block_table =
   [
-    [3, 4, 5],  # req_B, gathered from persistent row 1
-    [7, 8],     # req_A, gathered from persistent row 0
-    [9],        # req_C, gathered from persistent row 2
+    [3, 4, 5],  # req_B (persistent row 1)
+    [7, 8],     # req_A (persistent row 0)
+    [9],        # req_C (persistent row 2)
   ]
 
-sampling metadata = [temperature for req_B, req_A, req_C]
+sampling metadata = [0.7 for req_B, 1.0 for req_A, 0.8 for req_C]
 ```
 
 No row moves when A finishes and D joins. D simply claims the next free persistent row. The gather kernel reads the rows the scheduler asked for and packs them into the layout the attention backend expects this step.
@@ -432,13 +427,13 @@ MRV2 remains experimental and not feature-complete for every architecture (linea
 
 ## Takeaways: The Evolution of Bottlenecks
 
-Optimizing LLM inference goes beyond writing better kernels. It's about systematically eliminating system bottlenecks one after another. vLLM's architecture evolved by chasing these limits:
+Faster kernels only get you so far. vLLM's real wins came from finding the next bottleneck each time the previous one was unblocked:
 
 *   **V0:** Solved memory fragmentation *(PagedAttention + continuous batching)*.
 *   **V1:** Unblocked the GPU and simplified scheduling *(EngineCore/ZMQ + async overlap + unified token budget)*.
 *   **MRV2:** Fixed state management overhead *(Stable state tables + GPU gather + async-first runner)*.
 
-Migrating a hybrid model made this progression obvious. Optimizing a single forward pass is just math. The real engineering challenge is orchestrating memory, scheduling, and state for thousands of unpredictable requests at once.
+Migrating a hybrid model is what made this stack of bottlenecks obvious to me. The mismatched shapes and dropped batch dims came from attaching per-request SSM state to batch slots that V1 kept reshuffling whenever the schedule changed. Once MRV2 ships stable rows for every architecture, that whole class of bug goes away. The hard engineering was never the forward pass; it was keeping thousands of unpredictable requests coherent across memory, scheduling, and state at the same time.
 
 ***
 

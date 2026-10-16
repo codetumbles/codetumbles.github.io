@@ -1,2 +1,7 @@
-# Curated "Featured" list. Renders only when
-# `site.features.curated_lists` is true. Each entry: { title, url, date }
+# "Start here" picks for the home page. Renders when `site.features.curated_lists` is true.
+- title: "War on Registers: GPU Metamorphosis"
+  url: /writing/2026-08-23-war-on-registers/
+  date: 2026-08-23
+- title: "vLLM's Evolution: PagedAttention to MRV2"
+  url: /writing/2026-06-28-vllm-evolution-pagedattention-to-mrv2/
+  date: 2026-06-28

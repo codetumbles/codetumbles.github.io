@@ -53,7 +53,7 @@ features:
   newsletter:          false   # set true once `newsletter_url` is filled in
   mermaid:             false   # global default; per-post opt-in via `mermaid: true`
   typewriter:          false
-  curated_lists:       false
+  curated_lists:       true
   comments:            false   # set to "utterances" or "giscus" to enable
 
 newsletter_url:        ""      # e.g. https://buttondown.email/api/emails/embed-subscribe/yourname
